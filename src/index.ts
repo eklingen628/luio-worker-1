@@ -69,8 +69,13 @@ async function generatePKCE() {
 
 	const verifierString = arrayBufferToBase64(randomBuffer)
 
+	const encoder = new TextEncoder();
 
-	const chalBuffer = await crypto.subtle.digest("SHA-256", randomBuffer);
+	const data = encoder.encode(verifierString);
+
+
+
+	const chalBuffer = await crypto.subtle.digest("SHA-256", data);
 
 	const challengeString = toBase64Url(arrayBufferToBase64(chalBuffer))
 
