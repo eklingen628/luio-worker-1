@@ -5,7 +5,9 @@ import { DurableObject } from "cloudflare:workers";
 interface Env {
   FITBIT_CLIENT_ID: string;
   FITBIT_CLIENT_SECRET: string;
-  REDIRECT_URI: string; // if you’re also using that as a var
+  REDIRECT_URI: string;
+
+
 }
 
 
@@ -243,11 +245,13 @@ export default {
 			});
 
 
-			
-
 			const res2 = await stub.fetch("https://store/token", { method: "GET" });
 			const data2 = await res.json();
 			console.log("Stored token:", data);
+
+
+
+
 
 			return new Response("Token stored", { status: 200 });
 
