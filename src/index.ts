@@ -48,19 +48,30 @@ export default {
 	 * @returns The response to be sent back to the client
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
-		// Create a `DurableObjectId` for an instance of the `MyDurableObject`
-		// class named "foo". Requests from all Workers to the instance named
-		// "foo" will go to a single globally unique Durable Object instance.
-		const id: DurableObjectId = env.MY_DURABLE_OBJECT.idFromName("foo");
 
-		// Create a stub to open a communication channel with the Durable
-		// Object instance.
-		const stub = env.MY_DURABLE_OBJECT.get(id);
+	
 
-		// Call the `sayHello()` RPC method on the stub to invoke the method on
-		// the remote Durable Object instance
-		const greeting = await stub.sayHello("world");
+		const url = new URL(request.url)
 
-		return new Response(greeting);
+		if (url.pathname === "/auth") {
+			const fitbiturl = new URL("https://www.fitbit.com/oauth2/authorize")
+
+			return Response.redirect(fitbiturl.toString(), 302)
+
+		}
+		else if (url.pathname === "/callback") {
+
+		}
+		else {
+			return new Response("Not found", {status: 404})
+		}
+
+		console.log(request)
+
+
+
+
+
+		return new Response();
 	},
 } satisfies ExportedHandler<Env>;

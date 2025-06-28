@@ -25,6 +25,9 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"REDIRECT_URI": "https://lutestpage.pages.dev.dev/callback"
 	}
 	/**
 	 * Smart Placement
