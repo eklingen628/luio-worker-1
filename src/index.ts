@@ -65,9 +65,9 @@ function toBase64Url(base64: string) {
 
 
 async function generatePKCE() {
-	const randomBuffer = crypto.getRandomValues(new Uint8Array(32)).buffer;
+	const randomBuffer = crypto.getRandomValues(new Uint8Array(48)).buffer;
 
-	const verifierString = arrayBufferToBase64(randomBuffer)
+	const verifierString = toBase64Url(arrayBufferToBase64(randomBuffer))
 
 	const encoder = new TextEncoder();
 
@@ -155,6 +155,10 @@ export default {
   				return new Response("Missing verifier", { status: 400 });
 			}
 
+
+			console.log("CALLBACK FLOW");
+			console.log("received code:", authcode);
+			console.log("verifier from cookie:", verifierString);
 			
 			const tokenURL = new URL("https://api.fitbit.com/oauth2/token")
 
