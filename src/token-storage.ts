@@ -1,3 +1,5 @@
+import { DurableObject } from "cloudflare:workers";
+
 export class TokenStorage {
   state: DurableObjectState;
 

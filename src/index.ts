@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 
+
 interface Env {
   FITBIT_CLIENT_ID: string;
   FITBIT_CLIENT_SECRET: string;
