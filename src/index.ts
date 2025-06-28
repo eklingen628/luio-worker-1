@@ -49,6 +49,46 @@ export class MyDurableObject extends DurableObject<Env> {
 }
 
 
+
+export class TokenStorage extends DurableObject<Env>{
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env)
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const method = request.method;
+
+    if (method === "PUT") {
+      const body = await request.json();
+      await this.ctx.storage.put("token", body);
+      return new Response("Token stored", { status: 200 });
+    }
+
+    if (method === "GET") {
+      const token = await this.ctx.storage.get("token");
+      return new Response(JSON.stringify(token), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response("Not allowed", { status: 405 });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 function arrayBufferToBase64( buffer: ArrayBuffer ) {
     let binary = "";
     const bytes = new Uint8Array( buffer );
