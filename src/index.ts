@@ -253,10 +253,11 @@ export default {
 			await env.TOKENS.put("some-user-id", JSON.stringify(data))
 
 
+			// const stored = await env.TOKENS.get("some-user-id");
+			// const token = stored ? JSON.parse(stored) : null;
 
 
-
-
+			console.log("Token:", JSON.stringify(data));
 
 
 			return new Response("Token stored", { status: 200 });
