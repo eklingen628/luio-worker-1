@@ -1,5 +1,14 @@
 import { DurableObject } from "cloudflare:workers";
 
+
+interface Env {
+  FITBIT_CLIENT_ID: string;
+  FITBIT_CLIENT_SECRET: string;
+  REDIRECT_URI: string; // if you’re also using that as a var
+}
+
+
+
 /**
  * Welcome to Cloudflare Workers! This is your first Durable Objects application.
  *
@@ -38,6 +47,44 @@ export class MyDurableObject extends DurableObject<Env> {
 	}
 }
 
+
+function arrayBufferToBase64( buffer: ArrayBuffer ) {
+    let binary = "";
+    const bytes = new Uint8Array( buffer );
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode( bytes[ i ] );
+    }
+    return btoa( binary );
+}
+
+function toBase64Url(base64: string) {
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+
+
+async function generatePKCE() {
+	const randomBuffer = crypto.getRandomValues(new Uint8Array(32)).buffer;
+
+	const verifierString = arrayBufferToBase64(randomBuffer)
+
+
+	const chalBuffer = await crypto.subtle.digest("SHA-256", randomBuffer);
+
+	const challengeString = toBase64Url(arrayBufferToBase64(chalBuffer))
+
+
+	return {
+		code_verifier: verifierString,
+		code_challenge: challengeString
+	}
+
+}
+
+
+
+
 export default {
 	/**
 	 * This is the standard fetch handler for a Cloudflare Worker
@@ -49,19 +96,102 @@ export default {
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
 
-	
-
 		const url = new URL(request.url)
 
 		if (url.pathname === "/auth") {
-			const fitbiturl = new URL("https://www.fitbit.com/oauth2/authorize")
 
-			return Response.redirect(fitbiturl.toString(), 302)
+			const fitbitAuthUrl = new URL("https://www.fitbit.com/oauth2/authorize")
+
+			const { code_verifier, code_challenge } = await generatePKCE();
+
+
+			fitbitAuthUrl.searchParams.set("client_id", env.FITBIT_CLIENT_ID)
+			fitbitAuthUrl.searchParams.set("response_type", "code")
+			fitbitAuthUrl.searchParams.set("scope", "activity heartrate sleep")
+			fitbitAuthUrl.searchParams.set("redirect_uri", env.REDIRECT_URI)
+			fitbitAuthUrl.searchParams.set("code_challenge", code_challenge)
+			fitbitAuthUrl.searchParams.set("code_challenge_method", "S256")
+
+
+			//possibly replace using the headers cookie with a durable object
+			const headers = new Headers();
+			headers.set("Location", fitbitAuthUrl.toString());
+			headers.set("Set-Cookie", `verifier=${code_verifier}; Path=/; Secure; HttpOnly; SameSite=Lax`);
+
+			return new Response(null, {
+				status: 302,
+				headers
+			});
+
+
+			//return Response.redirect(fitbiturl.toString(), 302)
 
 		}
 		else if (url.pathname === "/callback") {
 
+
+			const authcode: string | null = url.searchParams.get("code");
+
+			if (!authcode) {
+				return new Response("Missing code", { status: 400 });
+			}
+
+			let verifierString = null
+
+			const cookie: string | null = request.headers.get("Cookie")
+			if (cookie !== null) {
+				verifierString = cookie
+					.split("; ")
+					.find(part => part.startsWith("verifier="))
+					?.split("=")[1]
+			}
+			
+			if (!verifierString) {
+  				return new Response("Missing verifier", { status: 400 });
+			}
+
+			
+			const tokenURL = new URL("https://api.fitbit.com/oauth2/token")
+
+			const body = new URLSearchParams();
+			body.set("client_id", env.FITBIT_CLIENT_ID);
+			body.set("grant_type", "authorization_code");
+			body.set("redirect_uri", env.REDIRECT_URI);
+			body.set("code", authcode);
+			body.set("code_verifier", verifierString);
+
+			const authString = `${env.FITBIT_CLIENT_ID}:${env.FITBIT_CLIENT_SECRET}`;
+			const encodedAuth = btoa(authString); // base64-encode it
+
+
+			const req = new Request(tokenURL.toString(), {
+				method: "Post",
+				body,
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+					"Authorization": `Basic ${encodedAuth}`
+
+				}
+
+			})
+
+
+			const res = await fetch(req);
+
+			const data = await res.json();
+			return new Response(JSON.stringify(data), {
+				headers: { "Content-Type": "application/json" }
+			});
+
+
+
+
+
+
 		}
+
+
+
 		else {
 			return new Response("Not found", {status: 404})
 		}
