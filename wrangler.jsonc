@@ -15,8 +15,9 @@
 		// 	"tag": "v1",
 		// },
 		{
-			"tag": "v1",
-			"new_sqlite_classes": ["TokenStorage"]
+			"tag": "v2",
+			// "new_sqlite_classes": ["TokenStorage"],
+			"deleted_classes": ["MyDurableObject"]
 		}
 	],
 	"durable_objects": {
@@ -25,10 +26,10 @@
 			// 	"class_name": "MyDurableObject",
 			// 	"name": "MY_DURABLE_OBJECT"
 			// },
-			{
-				"class_name": "TokenStorage",
-				"name": "TOKENS"
-			}
+			// {
+			// 	"class_name": "TokenStorage",
+			// 	"name": "TOKENS"
+			// }
 
 		]
 	},

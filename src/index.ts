@@ -25,7 +25,7 @@ interface Env {
  * Learn more at https://developers.cloudflare.com/durable-objects
  */
 
-// /** A Durable Object's behavior is defined in an exported Javascript class */
+/** A Durable Object's behavior is defined in an exported Javascript class */
 // export class MyDurableObject extends DurableObject<Env> {
 // 	/**
 // 	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
@@ -235,19 +235,19 @@ export default {
 
 
 
-			// change this to data.user_id later
-			const id = env.TOKENS.idFromName("some-unique-user-id");
-			const stub = env.TOKENS.get(id);
+			// // change this to data.user_id later
+			// const id = env.TOKENS.idFromName("some-unique-user-id");
+			// const stub = env.TOKENS.get(id);
 
-			await stub.fetch("https://store/token", {
-			method: "PUT",
-			body: JSON.stringify(data),
-			});
+			// await stub.fetch("https://store/token", {
+			// method: "PUT",
+			// body: JSON.stringify(data),
+			// });
 
 
-			const res2 = await stub.fetch("https://store/token", { method: "GET" });
-			const data2 = await res.json();
-			console.log("Stored token:", data);
+			// const res2 = await stub.fetch("https://store/token", { method: "GET" });
+			// const data2 = await res.json();
+			// console.log("Stored token:", data);
 
 
 
