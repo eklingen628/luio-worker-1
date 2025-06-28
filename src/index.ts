@@ -188,13 +188,27 @@ export default {
 			const res = await fetch(req);
 
 			const data = await res.json();
-			return new Response(JSON.stringify(data), {
-				headers: { "Content-Type": "application/json" }
+
+
+
+
+			// change this to data.user_id later
+			const id = env.TOKENS.idFromName("some-unique-user-id");
+			const stub = env.TOKENS.get(id);
+
+			await stub.fetch("https://store/token", {
+			method: "PUT",
+			body: JSON.stringify(data),
 			});
 
 
+			
 
+			const res2 = await stub.fetch("https://store/token", { method: "GET" });
+			const data2 = await res.json();
+			console.log("Stored token:", data);
 
+			return new Response("Token stored", { status: 200 });
 
 
 		}
