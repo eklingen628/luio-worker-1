@@ -15,9 +15,8 @@
 		// 	"tag": "v1",
 		// },
 		{
-			"tag": "v2",
-			// "new_sqlite_classes": ["TokenStorage"],
-			"deleted_classes": ["MyDurableObject"]
+			"tag": "v3",
+			"deleted_classes": ["TokenStorage"]
 		}
 	],
 	"durable_objects": {
@@ -38,7 +37,14 @@
 	},
 	"vars": {
 		"REDIRECT_URI": "https://lutestworker.klingene.workers.dev/callback"
-	}
+	},
+	"kv_namespaces": [
+		{
+		"binding": "TOKENS",
+		"id": "d07d0e036acf4a15bea91530ba5e81ac"
+		}
+	]
+
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

@@ -52,32 +52,32 @@ interface Env {
 
 
 
-export class TokenStorage extends DurableObject<Env>{
+// export class TokenStorage extends DurableObject<Env>{
 
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env)
-  }
+//   constructor(ctx: DurableObjectState, env: Env) {
+//     super(ctx, env)
+//   }
 
-  async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const method = request.method;
+//   async fetch(request: Request): Promise<Response> {
+//     const url = new URL(request.url);
+//     const method = request.method;
 
-    if (method === "PUT") {
-      const body = await request.json();
-      await this.ctx.storage.put("token", body);
-      return new Response("Token stored", { status: 200 });
-    }
+//     if (method === "PUT") {
+//       const body = await request.json();
+//       await this.ctx.storage.put("token", body);
+//       return new Response("Token stored", { status: 200 });
+//     }
 
-    if (method === "GET") {
-      const token = await this.ctx.storage.get("token");
-      return new Response(JSON.stringify(token), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+//     if (method === "GET") {
+//       const token = await this.ctx.storage.get("token");
+//       return new Response(JSON.stringify(token), {
+//         headers: { "Content-Type": "application/json" },
+//       });
+//     }
 
-    return new Response("Not allowed", { status: 405 });
-  }
-}
+//     return new Response("Not allowed", { status: 405 });
+//   }
+// }
 
 
 
@@ -248,6 +248,12 @@ export default {
 			// const res2 = await stub.fetch("https://store/token", { method: "GET" });
 			// const data2 = await res.json();
 			// console.log("Stored token:", data);
+
+
+			await env.TOKENS.put("some-user-id", JSON.stringify(data))
+
+
+
 
 
 
