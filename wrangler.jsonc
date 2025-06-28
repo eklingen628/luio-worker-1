@@ -10,11 +10,15 @@
 	"migrations": [
 		{
 			"new_sqlite_classes": [
-				"MyDurableObject"
+				"MyDurableObject",
+				"TokenStorage"
 			],
 			"tag": "v1",
-			"new_classes": ["TokenStorage"]
-		}
+		},
+		// {
+		// 	"tag": "v1",
+		// 	"new_classes": ["TokenStorage"]
+		// }
 	],
 	"durable_objects": {
 		"bindings": [
