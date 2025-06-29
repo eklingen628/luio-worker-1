@@ -268,6 +268,28 @@ export default {
 
 		}
 
+		else if (url.pathname === "/get-steps") {
+			const raw = await env.TOKENS.get("some-user-id");
+			if (!raw) return new Response("No token found", { status: 401 });
+
+			const token = JSON.parse(raw);
+			const accessToken = token.access_token;
+
+			
+			const res = await fetch("https://api.fitbit.com/1.2/user/-/activities/sleep/list.json", {
+			headers: {
+				"Authorization": `Bearer ${accessToken}`
+			}
+			});
+
+			const data = await res.json();
+			return new Response(JSON.stringify(data), {
+			headers: { "Content-Type": "application/json" }
+			});
+
+
+		}
+
 
 
 		else {
