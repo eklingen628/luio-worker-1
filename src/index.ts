@@ -260,7 +260,7 @@ export default {
 			// const token = stored ? JSON.parse(stored) : null;
 
 
-			console.log("Token:", JSON.stringify(data));
+			// console.log("Token:", JSON.stringify(data));
 
 
 			return new Response("Token stored", { status: 200 });
