@@ -144,6 +144,9 @@ export default {
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
 
+		console.log("Incoming request:", request.url);
+
+
 		const url = new URL(request.url)
 
 		if (url.pathname === "/auth") {
