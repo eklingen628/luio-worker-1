@@ -14,10 +14,10 @@
 		// 	],
 		// 	"tag": "v1",
 		// },
-		{
-			"tag": "v3",
-			"deleted_classes": ["TokenStorage"]
-		}
+		// {
+		// 	"tag": "v3",
+		// 	"deleted_classes": ["TokenStorage"]
+		// }
 	],
 	"durable_objects": {
 		"bindings": [

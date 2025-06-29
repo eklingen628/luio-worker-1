@@ -276,7 +276,7 @@ export default {
 			const accessToken = token.access_token;
 
 			
-			const res = await fetch("https://api.fitbit.com/1.2/user/-/activities/sleep/list.json", {
+			const res = await fetch("https://api.fitbit.com/1.2/user/-/sleep/list.json", {
 			headers: {
 				"Authorization": `Bearer ${accessToken}`
 			}
@@ -289,6 +289,7 @@ export default {
 
 
 		}
+
 
 
 
