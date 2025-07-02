@@ -11,7 +11,6 @@ interface Env {
 }
 
 
-
 /**
  * Welcome to Cloudflare Workers! This is your first Durable Objects application.
  *
@@ -144,10 +143,22 @@ export default {
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
 
+		
 		console.log("Incoming request:", request.url);
 
 
 		const url = new URL(request.url)
+
+		//for dev 
+		const isDev = url.hostname.includes('localhost') || 
+					url.hostname.includes('127.0.0.1') ||
+					url.port !== '';
+
+		//for dev
+		const redirectUri = isDev 
+			? `http://${url.host}/callback`
+			: env.REDIRECT_URI;
+
 
 		if (url.pathname === "/auth") {
 
@@ -158,8 +169,8 @@ export default {
 
 			fitbitAuthUrl.searchParams.set("client_id", env.FITBIT_CLIENT_ID)
 			fitbitAuthUrl.searchParams.set("response_type", "code")
-			fitbitAuthUrl.searchParams.set("scope", "activity heartrate sleep")
-			fitbitAuthUrl.searchParams.set("redirect_uri", env.REDIRECT_URI)
+			fitbitAuthUrl.searchParams.set("scope", "activity cardio_fitness electrocardiogram heartrate irregular_rhythm_notifications location nutrition oxygen_saturation profile respiratory_rate settings sleep social temperature weight")
+			fitbitAuthUrl.searchParams.set("redirect_uri", redirectUri)
 			fitbitAuthUrl.searchParams.set("code_challenge", code_challenge)
 			fitbitAuthUrl.searchParams.set("code_challenge_method", "S256")
 
@@ -211,7 +222,7 @@ export default {
 			const body = new URLSearchParams();
 			body.set("client_id", env.FITBIT_CLIENT_ID);
 			body.set("grant_type", "authorization_code");
-			body.set("redirect_uri", env.REDIRECT_URI);
+			body.set("redirect_uri", redirectUri);
 			body.set("code", authcode);
 			body.set("code_verifier", verifierString);
 
@@ -219,51 +230,50 @@ export default {
 			const encodedAuth = btoa(authString); // base64-encode it
 
 
-			const req = new Request(tokenURL.toString(), {
-				method: "Post",
+			const res = await fetch(tokenURL.toString(), {
+				method: "POST",
 				body,
 				headers: {
 					"Content-Type": "application/x-www-form-urlencoded",
 					"Authorization": `Basic ${encodedAuth}`
-
 				}
-
-			})
-
-
-			const res = await fetch(req);
+			});
 
 			const data = await res.json();
 
+			if (!data) return new Response("No token found", { status: 401 });
+
+			// const token = JSON.parse(data)
+
+			// let user_id = token.user_id
 
 
 
-			// // change this to data.user_id later
-			// const id = env.TOKENS.idFromName("some-unique-user-id");
-			// const stub = env.TOKENS.get(id);
 
-			// await stub.fetch("https://store/token", {
-			// method: "PUT",
-			// body: JSON.stringify(data),
-			// });
-
-
-			// const res2 = await stub.fetch("https://store/token", { method: "GET" });
-			// const data2 = await res.json();
-			// console.log("Stored token:", data);
 
 
 			await env.TOKENS.put("some-user-id", JSON.stringify(data))
 
 
-			// const stored = await env.TOKENS.get("some-user-id");
-			// const token = stored ? JSON.parse(stored) : null;
 
 
-			// console.log("Token:", JSON.stringify(data));
+			// const raw = await env.TOKENS.get("some-user-id");
+			
+			// if (!raw) return new Response("No token found", { status: 401 });
 
 
-			return new Response("Token stored", { status: 200 });
+
+			// const token = JSON.parse(raw);
+			// const accessToken = token.access_token;
+
+
+
+
+
+			// return Response.redirect("https://your-frontend-domain.com/dashboard", 302);
+
+			return new Response("Token found", { status: 302 });
+
 
 
 		}
@@ -272,11 +282,18 @@ export default {
 			const raw = await env.TOKENS.get("some-user-id");
 			if (!raw) return new Response("No token found", { status: 401 });
 
+			console.log(raw)
+
 			const token = JSON.parse(raw);
 			const accessToken = token.access_token;
 
+			let activitySummaryURL = "activities/date/2025-06-29.json"
+			let granularSteps = "activities/steps/date/2025-06-29/1d/1min.json"
+			let heartRateTimeSeries = "activities/heart/date/2025-06-29/1m.json"
+			let heartRateVariabilityByDate = "hrv/date/2025-06-30.json"
+
 			
-			const res = await fetch("https://api.fitbit.com/1.2/user/-/sleep/list.json?beforeDate=2025-06-30", {
+			const res = await fetch(`https://api.fitbit.com/1/user/-/${heartRateTimeSeries}`, {
 			headers: {
 				"Authorization": `Bearer ${accessToken}`
 			}
@@ -297,12 +314,6 @@ export default {
 			return new Response("Not found", {status: 404})
 		}
 
-		console.log(request)
 
-
-
-
-
-		return new Response();
 	},
 } satisfies ExportedHandler<Env>;
