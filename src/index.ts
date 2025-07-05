@@ -248,7 +248,6 @@ export default {
 			} 
 			catch (err) {
 				console.log({
-					date: new Date().toISOString(), 
 					source: "res.json()",
 					message: (err as Error).message,
 			});
@@ -257,7 +256,6 @@ export default {
 			}
 			if (!data) {
 				console.log({
-					date: new Date().toISOString(), 
 					source: "res.json()",
 					message: "No token was received"
 			});
@@ -301,22 +299,20 @@ export default {
 					// Replace this in prod:
 					// console.error("Insert failed: ", error);
 
-					await env.LOGS.put(`error-${Date.now()}`, JSON.stringify({
-					source: "supabase-upsert",
-					message: error.message,
-					user_id: data.user_id,
-					time: new Date().toISOString(),
-					}));
+					console.log({
+						source: "supabase-upsert",
+						message: error.message,
+						user_id: data.user_id,
+					});
 
 					return new Response("Database insert failed", { status: 500 });
 				}
 				} catch (err) {
-				await env.LOGS.put(`exception-${Date.now()}`, JSON.stringify({
-					source: "supabase-upsert",
-					message: (err as Error).message,
-					stack: (err as Error).stack,
-					time: new Date().toISOString(),
-				}));
+					console.log({
+						source: "supabase-upsert",
+						message: (err as Error).message,
+						stack: (err as Error).stack,
+					});
 
 				return new Response("Unexpected error", { status: 500 });
 				}
