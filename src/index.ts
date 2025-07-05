@@ -319,10 +319,10 @@ export default {
 
 			
 
-			
+			let success = new URL("https://lutestworker.klingene.workers.dev/login-success")
 
 
-			return env.ASSETS.fetch("login-success.html");
+			return env.ASSETS.fetch(success);
 
 			// return new Response("Token found", { status: 302 });
 
