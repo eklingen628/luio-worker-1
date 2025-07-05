@@ -333,7 +333,7 @@ export default {
 						user_id: data.user_id,
 					});
 
-					return new Response("Database insert failed", { status: 500 });
+					return new Response(error.message, { status: 500 });
 				}
 				} catch (err) {
 					console.log({
@@ -395,43 +395,43 @@ export default {
 		}
 
 
-	},
-
-	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-
-
-		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
-
-		//by default, only 1000 rows may be returned
-
-
-		//insert try catch
-
-		const { data, error } = await supabase.from("fitbit_users").select("*")
-
-		// console.log(data)
-
-		if (error) {
-			console.log({
-					source: "supabase-select",
-					message: error.message,
-				});
-
-			return new Response("Database select failed", { status: 500 });
-		}
-
-		data?.forEach(userData => {
-
-			refreshToken(userData)
-
-			getSleep(userData)
-			// checkActivity
-			// checkHeartRate(userData)
-			
-			
-		})
-
 	}
+
+	// async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+
+
+	// 	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+
+	// 	//by default, only 1000 rows may be returned
+
+
+	// 	//insert try catch
+
+	// 	const { data, error } = await supabase.from("fitbit_users").select("*")
+
+	// 	// console.log(data)
+
+	// 	if (error) {
+	// 		console.log({
+	// 				source: "supabase-select",
+	// 				message: error.message,
+	// 			});
+
+	// 		return new Response("Database select failed", { status: 500 });
+	// 	}
+
+	// 	data?.forEach(userData => {
+
+	// 		refreshToken(userData)
+
+	// 		getSleep(userData)
+	// 		// checkActivity
+	// 		// checkHeartRate(userData)
+			
+			
+	// 	})
+
+	// }
 
 
 
