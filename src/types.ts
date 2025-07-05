@@ -1,4 +1,4 @@
-export type userToken {
+export type UserToken = {
     access_token: string;
     expires_in: number;
     refresh_token: string;

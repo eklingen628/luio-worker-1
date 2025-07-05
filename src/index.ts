@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { createClient } from "@supabase/supabase-js";
-import { userToken } from "./types";
+import { UserToken } from "./types";
 
 
 interface Env {
@@ -10,9 +10,6 @@ interface Env {
 
 
 }
-
-
-
 
 
 
@@ -48,8 +45,39 @@ interface Env {
 
 
 
+//replace with types from supabase?
+function refreshToken(userData) {
+
+	const currentDate = new Date(Date.now() + (20000 * 1000))
+	const date = new Date(userData.expires_at)
 
 
+	console.log(currentDate)
+	console.log(date)
+
+	if (currentDate > date) {
+		console.log("yes")
+	}
+	else {
+		console.log("no")
+	} 
+				
+}
+
+
+
+
+
+//replace with types from supabase?
+function getSleep(userData) {
+
+	const currentDate = new Date(Date.now())
+
+
+
+
+				
+}
 
 
 
@@ -110,8 +138,8 @@ export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		
 
-		const supabaseUrl = "https://kxidhvroixdxwlgkkwff.supabase.co"
-		const supabase = createClient(supabaseUrl, env.SUPABASE_KEY)
+
+		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
 
 
 
@@ -237,14 +265,14 @@ export default {
 				}
 			});
 
-			// const data = await res.json() as userToken
+			// const data = await res.json() as UserToken
 
 			// if (!data) return new Response("No token found", { status: 401 });
 			
-			let data: userToken;
+			let data: UserToken;
 
 			try {
-				data = await res.json() as userToken;
+				data = await res.json() as UserToken;
 			} 
 			catch (err) {
 				console.log({
@@ -285,7 +313,7 @@ export default {
 
 			try {
 				const { error } = await supabase
-					.from("users")
+					.from("fitbit_users")
 					.upsert([{
 					user_id: data.user_id,
 					access_token: data.access_token,
@@ -368,4 +396,48 @@ export default {
 
 
 	},
+
+	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+
+
+		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+
+		//by default, only 1000 rows may be returned
+
+
+		//insert try catch
+
+		const { data, error } = await supabase.from("fitbit_users").select("*")
+
+		// console.log(data)
+
+		if (error) {
+			console.log({
+					source: "supabase-select",
+					message: error.message,
+				});
+
+			return new Response("Database select failed", { status: 500 });
+		}
+
+		data?.forEach(userData => {
+
+			refreshToken(userData)
+
+			getSleep(userData)
+			// checkActivity
+			// checkHeartRate(userData)
+			
+			
+		})
+
+	}
+
+
+
+
+
+
+
+
 } satisfies ExportedHandler<Env>;
