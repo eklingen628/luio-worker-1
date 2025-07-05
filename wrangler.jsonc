@@ -36,7 +36,8 @@
 		"enabled": true
 	},
 	"vars": {
-		"REDIRECT_URI": "https://lutestworker.klingene.workers.dev/callback"
+		"REDIRECT_URI": "https://lutestworker.klingene.workers.dev/callback",
+		"SUPABASE_URL": "https://kxidhvroixdxwlgkkwff.supabase.co"
 	},
 	"kv_namespaces": [
 		{

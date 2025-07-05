@@ -397,41 +397,41 @@ export default {
 
 	}
 
-	// async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
 
 
-	// 	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
 
-	// 	//by default, only 1000 rows may be returned
+		//by default, only 1000 rows may be returned
 
 
-	// 	//insert try catch
+		//insert try catch
 
-	// 	const { data, error } = await supabase.from("fitbit_users").select("*")
+		const { data, error } = await supabase.from("fitbit_users").select("*")
 
-	// 	// console.log(data)
+		// console.log(data)
 
-	// 	if (error) {
-	// 		console.log({
-	// 				source: "supabase-select",
-	// 				message: error.message,
-	// 			});
+		if (error) {
+			console.log({
+					source: "supabase-select",
+					message: error.message,
+				});
 
-	// 		return new Response("Database select failed", { status: 500 });
-	// 	}
+			return new Response("Database select failed", { status: 500 });
+		}
 
-	// 	data?.forEach(userData => {
+		data?.forEach(userData => {
 
-	// 		refreshToken(userData)
+			refreshToken(userData)
 
-	// 		getSleep(userData)
-	// 		// checkActivity
-	// 		// checkHeartRate(userData)
+			getSleep(userData)
+			// checkActivity
+			// checkHeartRate(userData)
 			
 			
-	// 	})
+		})
 
-	// }
+	}
 
 
 
