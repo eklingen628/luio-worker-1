@@ -43,7 +43,16 @@
 		"binding": "TOKENS",
 		"id": "d07d0e036acf4a15bea91530ba5e81ac"
 		}
-	]
+	],
+	"assets": {
+		"not_found_handling": "404-page",
+		"directory": "./public",
+		"binding": "ASSETS",
+		"html_handling": "auto-trailing-slash",
+		
+	}
+
+
 
 	/**
 	 * Smart Placement

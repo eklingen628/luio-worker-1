@@ -1,5 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
-
+import { createClient } from "@supabase/supabase-js";
+import { userToken } from "./types";
 
 
 interface Env {
@@ -9,52 +10,6 @@ interface Env {
 
 
 }
-
-
-
-import { OAuth2Client } from '@badgateway/oauth2-client';
-
-const client = new OAuth2Client({
-
-  // The base URI of your OAuth2 server
-  server: 'https://my-auth-server/',
-
-  // OAuth2 client id
-  clientId: env.FITBIT_CLIENT_ID,
-
-  // OAuth2 client secret. Only required for 'client_credentials', 'password'
-  // flows. Don't specify this in insecure contexts, such as a browser using
-  // the authorization_code flow.
-  clientSecret: env.FITBIT_CLIENT_SECRET,
-
-
-  // The following URIs are all optional. If they are not specified, we will
-  // attempt to discover them using the oauth2 discovery document.
-  // If your server doesn't have support this, you may need to specify these.
-  // you may use relative URIs for any of these.
-
-
-  // Token endpoint. Most flows need this.
-  // If not specified we'll use the information for the discovery document
-  // first, and otherwise default to /token
-  tokenEndpoint: 'https://api.fitbit.com/oauth2/token',
-
-  // Authorization endpoint.
-  //
-  // You only need this to generate URLs for authorization_code flows.
-  // If not specified we'll use the information for the discovery document
-  // first, and otherwise default to /authorize
-  authorizationEndpoint: '/https://www.fitbit.com/oauth2/authorize',
-
-  // OAuth2 Metadata discovery endpoint.
-  //
-  // This document is used to determine various server features.
-  // If not specified, we assume it's on /.well-known/oauth2-authorization-server
-  discoveryEndpoint: '/.well-known/oauth2-authorization-server',
-
-});
-
-
 
 
 
@@ -153,9 +108,12 @@ export default {
 	 * @returns The response to be sent back to the client
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
-
 		
-		console.log("Incoming request:", request.url);
+
+		const supabaseUrl = "https://kxidhvroixdxwlgkkwff.supabase.co"
+		const supabase = createClient(supabaseUrl, env.SUPABASE_KEY)
+
+
 
 
 		const url = new URL(request.url)
@@ -169,6 +127,35 @@ export default {
 		const redirectUri = isDev 
 			? `http://${url.host}/callback`
 			: env.REDIRECT_URI;
+
+
+
+		// index.ts – respond with login.html when the request is for “/”
+
+		// `?raw` tells esbuild to bundle the file as a plain string.
+		
+
+
+
+		// Serve the page only on `/` (and `/index.html` for convenience)
+		if (url.pathname === "/" || url.pathname === "/login.html") {
+		// return new Response(loginHtml, {
+		// 	headers: { "content-type": "text/html; charset=utf-8" },
+		// });
+
+			return env.ASSETS.fetch(request);
+		}
+
+
+
+
+
+
+
+
+
+
+
 
 
 		if (url.pathname === "/auth") {
@@ -250,73 +237,131 @@ export default {
 				}
 			});
 
-			const data = await res.json();
+			// const data = await res.json() as userToken
 
-			if (!data) return new Response("No token found", { status: 401 });
-
-			// const token = JSON.parse(data)
-
-			// let user_id = token.user_id
-
-
-
-
-
-
-			await env.TOKENS.put("some-user-id", JSON.stringify(data))
-
-
-
-
-			// const raw = await env.TOKENS.get("some-user-id");
+			// if (!data) return new Response("No token found", { status: 401 });
 			
-			// if (!raw) return new Response("No token found", { status: 401 });
+			let data: userToken;
 
+			try {
+				data = await res.json() as userToken;
+			} 
+			catch (err) {
+				console.log({
+					date: new Date().toISOString(), 
+					source: "res.json()",
+					message: (err as Error).message,
+			});
 
-
-			// const token = JSON.parse(raw);
-			// const accessToken = token.access_token;
-
-
-
-
-
-			// return Response.redirect("https://your-frontend-domain.com/dashboard", 302);
-
-			return new Response("Token found", { status: 302 });
-
-
-
-		}
-
-		else if (url.pathname === "/get-steps") {
-			const raw = await env.TOKENS.get("some-user-id");
-			if (!raw) return new Response("No token found", { status: 401 });
-
-			console.log(raw)
-
-			const token = JSON.parse(raw);
-			const accessToken = token.access_token;
-
-			let activitySummaryURL = "activities/date/2025-06-29.json"
-			let granularSteps = "activities/steps/date/2025-06-29/1d/1min.json"
-			let heartRateTimeSeries = "activities/heart/date/2025-06-29/1m.json"
-			let heartRateVariabilityByDate = "hrv/date/2025-06-30.json"
-
-			
-			const res = await fetch(`https://api.fitbit.com/1/user/-/${heartRateTimeSeries}`, {
-			headers: {
-				"Authorization": `Bearer ${accessToken}`
+			return new Response("Error in Token Message received", { status: 400 });
 			}
+			if (!data) {
+				console.log({
+					date: new Date().toISOString(), 
+					source: "res.json()",
+					message: "No token was received"
 			});
+				return new Response("No token was recieved", { status: 401 });
+			}
 
-			const data = await res.json();
-			return new Response(JSON.stringify(data), {
-			headers: { "Content-Type": "application/json" }
-			});
+			
+
+
+
+			// const { error } = await supabase
+			// 	.from("users")
+			// 	.upsert([{
+			// 		user_id: data.user_id,
+			// 		access_token: data.access_token,
+			// 		refresh_token: data.refresh_token,
+			// 		expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+			// 		token_type: data.token_type,
+			// 		scope: data.scope				
+			// 	}])
+			// if (error) {
+			// 	console.error("Insert failed: ", error)
+
+			// }
+
+
+
+			try {
+				const { error } = await supabase
+					.from("users")
+					.upsert([{
+					user_id: data.user_id,
+					access_token: data.access_token,
+					refresh_token: data.refresh_token,
+					expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+					token_type: data.token_type,
+					scope: data.scope
+					}]);
+
+				if (error) {
+					// Replace this in prod:
+					// console.error("Insert failed: ", error);
+
+					await env.LOGS.put(`error-${Date.now()}`, JSON.stringify({
+					source: "supabase-upsert",
+					message: error.message,
+					user_id: data.user_id,
+					time: new Date().toISOString(),
+					}));
+
+					return new Response("Database insert failed", { status: 500 });
+				}
+				} catch (err) {
+				await env.LOGS.put(`exception-${Date.now()}`, JSON.stringify({
+					source: "supabase-upsert",
+					message: (err as Error).message,
+					stack: (err as Error).stack,
+					time: new Date().toISOString(),
+				}));
+
+				return new Response("Unexpected error", { status: 500 });
+				}
+
+			
+
+			
+
+
+			return env.ASSETS.fetch("login-success.html");
+
+			// return new Response("Token found", { status: 302 });
+
 
 
 		}
+
+		// else if (url.pathname === "/get-steps") {
+		// 	const raw = await env.TOKENS.get("some-user-id");
+		// 	if (!raw) return new Response("No token found", { status: 401 });
+
+		// 	console.log(raw)
+
+		// 	const token = JSON.parse(raw);
+		// 	const accessToken = token.access_token;
+
+		// 	let activitySummaryURL = "activities/date/2025-06-29.json"
+		// 	let granularSteps = "activities/steps/date/2025-06-29/1d/1min.json"
+		// 	let heartRateTimeSeries = "activities/heart/date/2025-06-29/1m.json"
+		// 	let heartRateVariabilityByDate = "hrv/date/2025-06-30.json"
+
+			
+		// 	const res = await fetch(`https://api.fitbit.com/1/user/-/${heartRateTimeSeries}`, {
+		// 	headers: {
+		// 		"Authorization": `Bearer ${accessToken}`
+		// 	}
+		// 	});
+
+		// 	const data = await res.json();
+		// 	return new Response(JSON.stringify(data), {
+		// 	headers: { "Content-Type": "application/json" }
+		// 	});
+
+
+		// }
 
 
 
