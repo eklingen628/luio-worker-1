@@ -45,24 +45,6 @@ interface Env {
 
 
 
-//replace with types from supabase?
-function refreshToken(userData) {
-
-	const currentDate = new Date(Date.now() + (20000 * 1000))
-	const date = new Date(userData.expires_at)
-
-
-	console.log(currentDate)
-	console.log(date)
-
-	if (currentDate > date) {
-		console.log("yes")
-	}
-	else {
-		console.log("no")
-	} 
-				
-}
 
 
 
@@ -78,6 +60,118 @@ function getSleep(userData) {
 
 				
 }
+
+
+
+async function insertData(supabase: SupabaseClient<any, "public", any>, data): Promise<Response | null>  {
+
+
+	try {
+		const { error } = await supabase
+			.from("fitbit_users")
+			.upsert({
+				user_id: data.user_id,
+				access_token: data.access_token,
+				refresh_token: data.refresh_token,
+				expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+				token_type: data.token_type,
+				scope: data.scope
+			});
+
+		if (error) {
+			// Replace this in prod:
+			// console.error("Insert failed: ", error);
+
+			console.log({
+				source: "supabase-upsert",
+				message: error.message,
+				user_id: data.user_id,
+			});
+
+			return new Response(error.message, { status: 500 });
+		}
+		} catch (err) {
+			console.log({
+				source: "supabase-upsert",
+				message: (err as Error).message,
+				stack: (err as Error).stack,
+			});
+
+		return new Response("Unexpected error", { status: 500 });
+	}
+	//Null indicates success
+	return null;
+		
+}
+
+
+
+
+//replace with types from supabase?
+async function refreshToken(userData, interval: number, supabase: SupabaseClient<any, "public", any>, env: Env) {
+
+	const timeMilli = (interval * 1.5 * 60 * 60 * 1000) * 9
+
+	const dateTimeFuture = new Date(Date.now() + timeMilli)
+	const expiry = new Date(userData.expires_at)
+
+	console.log("Date in future:")
+	console.log(dateTimeFuture)
+	console.log("Expiry date:")
+	console.log(expiry)
+	console.log("Need refresh?", expiry < dateTimeFuture);
+
+	if (expiry >= dateTimeFuture) {
+		return
+	}
+
+	// if the expiration occurs prior to the defined future date, refresh the token
+	else {
+
+		const tokenURL = new URL("https://api.fitbit.com/oauth2/token")
+
+		const body = new URLSearchParams();
+		body.set("grant_type", "refresh_token");
+		body.set("refresh_token", userData.refresh_token);
+
+		const authString = `${env.FITBIT_CLIENT_ID}:${env.FITBIT_CLIENT_SECRET}`;
+		const encodedAuth = btoa(authString); // base64-encode it
+
+		let refresh;
+
+		try {
+		
+		const res = await fetch(tokenURL.toString(), {
+			method: "POST",
+			body,
+			headers: {
+				"Authorization": `Basic ${encodedAuth}`,
+				"Content-Type": "application/x-www-form-urlencoded",
+			}
+		})
+
+		if (!res.ok) {
+    		const msg = await res.text();        // or res.json() if you expect JSON
+    		console.error("Fitbit refresh failed:", res.status, msg);
+    		throw new Error("refresh-failed");
+  		}
+  		refresh = await res.json() as UserToken;         // only reached on 2xx
+  		// …persist tokens…
+		} 
+		
+		catch (err) {
+  		console.error("Token refresh error:", err);
+ 		 // decide: retry later or mark user for re-auth
+		}
+
+		await insertData(supabase, refresh)
+
+
+	}
+			
+}
+
+
 
 
 
@@ -238,11 +332,6 @@ export default {
   				return new Response("Missing verifier", { status: 400 });
 			}
 
-
-			console.log("CALLBACK FLOW");
-			console.log("received code:", authcode);
-			console.log("verifier from cookie:", verifierString);
-			
 			const tokenURL = new URL("https://api.fitbit.com/oauth2/token")
 
 			const body = new URLSearchParams();
@@ -310,40 +399,13 @@ export default {
 			// }
 
 
+			let popRes = await insertData(supabase, data)
 
-			try {
-				const { error } = await supabase
-					.from("fitbit_users")
-					.upsert([{
-					user_id: data.user_id,
-					access_token: data.access_token,
-					refresh_token: data.refresh_token,
-					expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-					token_type: data.token_type,
-					scope: data.scope
-					}]);
+			if (popRes) {
+				return popRes
+			}
 
-				if (error) {
-					// Replace this in prod:
-					// console.error("Insert failed: ", error);
 
-					console.log({
-						source: "supabase-upsert",
-						message: error.message,
-						user_id: data.user_id,
-					});
-
-					return new Response(error.message, { status: 500 });
-				}
-				} catch (err) {
-					console.log({
-						source: "supabase-upsert",
-						message: (err as Error).message,
-						stack: (err as Error).stack,
-					});
-
-				return new Response("Unexpected error", { status: 500 });
-				}
 
 			
 
@@ -404,12 +466,10 @@ export default {
 
 		//by default, only 1000 rows may be returned
 
-
+		const CRONINTERVALHOURS = 2
 		//insert try catch
 
 		const { data, error } = await supabase.from("fitbit_users").select("*")
-
-		// console.log(data)
 
 		if (error) {
 			console.log({
@@ -420,16 +480,18 @@ export default {
 			return new Response("Database select failed", { status: 500 });
 		}
 
-		data?.forEach(userData => {
+		for (const userData of data) {
+			await refreshToken(userData, CRONINTERVALHOURS, supabase, env)
+		}
 
-			refreshToken(userData)
 
-			getSleep(userData)
+
+			// getSleep(userData)
 			// checkActivity
 			// checkHeartRate(userData)
 			
 			
-		})
+
 
 	}
 
