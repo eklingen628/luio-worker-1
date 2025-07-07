@@ -1,175 +1,55 @@
 import { DurableObject } from "cloudflare:workers";
 import { createClient } from "@supabase/supabase-js";
-import { UserToken } from "./types";
-
-
-interface Env {
-  FITBIT_CLIENT_ID: string;
-  FITBIT_CLIENT_SECRET: string;
-  REDIRECT_URI: string;
-
-
-}
+import { UserToken} from "./types";
+import { insertSleepData, getSleep } from "./sleep";
+import { getAllUserData, insertUserData } from "./user";
+import { refreshToken, calcTimeToRefresh } from "./refresh";
 
 
 
 
-// export class TokenStorage extends DurableObject<Env>{
+function validateScope(userData) {
 
-//   constructor(ctx: DurableObjectState, env: Env) {
-//     super(ctx, env)
-//   }
+	const requiredScopes = ["activity", "sleep", "heartrate"]
 
-//   async fetch(request: Request): Promise<Response> {
-//     const url = new URL(request.url);
-//     const method = request.method;
+	const presentScopes = userData?.scope.split(" ").map(s => s.trim()).filter(s => s.length > 0) ?? []
+	const user_id = userData?.user_id ?? "user_id_not_found"
+	
+	const missingScopes = requiredScopes.filter(
+      scope => !presentScopes.includes(scope)
+    );
 
-//     if (method === "PUT") {
-//       const body = await request.json();
-//       await this.ctx.storage.put("token", body);
-//       return new Response("Token stored", { status: 200 });
-//     }
+	const availableScopes = requiredScopes.filter(
+      scope => presentScopes.includes(scope)
+    );
 
-//     if (method === "GET") {
-//       const token = await this.ctx.storage.get("token");
-//       return new Response(JSON.stringify(token), {
-//         headers: { "Content-Type": "application/json" },
-//       });
-//     }
-
-//     return new Response("Not allowed", { status: 405 });
-//   }
-// }
-
-
-
-
-
-
-
-
-
-
-//replace with types from supabase?
-function getSleep(userData) {
-
-	const currentDate = new Date(Date.now())
-
-
-
-
-				
-}
-
-
-
-async function insertData(supabase: SupabaseClient<any, "public", any>, data): Promise<Response | null>  {
-
-
-	try {
-		const { error } = await supabase
-			.from("fitbit_users")
-			.upsert({
-				user_id: data.user_id,
-				access_token: data.access_token,
-				refresh_token: data.refresh_token,
-				expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-				token_type: data.token_type,
-				scope: data.scope
-			});
-
-		if (error) {
-			// Replace this in prod:
-			// console.error("Insert failed: ", error);
-
-			console.log({
-				source: "supabase-upsert",
-				message: error.message,
-				user_id: data.user_id,
-			});
-
-			return new Response(error.message, { status: 500 });
-		}
-		} catch (err) {
-			console.log({
-				source: "supabase-upsert",
-				message: (err as Error).message,
-				stack: (err as Error).stack,
-			});
-
-		return new Response("Unexpected error", { status: 500 });
+	let allScopesPresent = missingScopes.length === 0
+	return {
+		user_id,
+		allScopesPresent,
+		availableScopes,
+		missingScopes,
 	}
-	//Null indicates success
-	return null;
-		
 }
 
 
 
 
-//replace with types from supabase?
-async function refreshToken(userData, interval: number, supabase: SupabaseClient<any, "public", any>, env: Env) {
-
-	const timeMilli = (interval * 1.5 * 60 * 60 * 1000) * 9
-
-	const dateTimeFuture = new Date(Date.now() + timeMilli)
-	const expiry = new Date(userData.expires_at)
-
-	console.log("Date in future:")
-	console.log(dateTimeFuture)
-	console.log("Expiry date:")
-	console.log(expiry)
-	console.log("Need refresh?", expiry < dateTimeFuture);
-
-	if (expiry >= dateTimeFuture) {
-		return
-	}
-
-	// if the expiration occurs prior to the defined future date, refresh the token
-	else {
-
-		const tokenURL = new URL("https://api.fitbit.com/oauth2/token")
-
-		const body = new URLSearchParams();
-		body.set("grant_type", "refresh_token");
-		body.set("refresh_token", userData.refresh_token);
-
-		const authString = `${env.FITBIT_CLIENT_ID}:${env.FITBIT_CLIENT_SECRET}`;
-		const encodedAuth = btoa(authString); // base64-encode it
-
-		let refresh;
-
-		try {
-		
-		const res = await fetch(tokenURL.toString(), {
-			method: "POST",
-			body,
-			headers: {
-				"Authorization": `Basic ${encodedAuth}`,
-				"Content-Type": "application/x-www-form-urlencoded",
-			}
-		})
-
-		if (!res.ok) {
-    		const msg = await res.text();        // or res.json() if you expect JSON
-    		console.error("Fitbit refresh failed:", res.status, msg);
-    		throw new Error("refresh-failed");
-  		}
-  		refresh = await res.json() as UserToken;         // only reached on 2xx
-  		// …persist tokens…
-		} 
-		
-		catch (err) {
-  		console.error("Token refresh error:", err);
- 		 // decide: retry later or mark user for re-auth
-		}
-
-		await insertData(supabase, refresh)
 
 
-	}
-			
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -399,7 +279,7 @@ export default {
 			// }
 
 
-			let popRes = await insertData(supabase, data)
+			let popRes = await insertUserData(supabase, data)
 
 			if (popRes) {
 				return popRes
@@ -461,34 +341,70 @@ export default {
 
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
 
-
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
 
 		//by default, only 1000 rows may be returned
 
-		const CRONINTERVALHOURS = 2
+		const CRON_INTERVAL_HOURS = 2
 		//insert try catch
 
-		const { data, error } = await supabase.from("fitbit_users").select("*")
+		let data = await getAllUserData(supabase)
 
-		if (error) {
-			console.log({
-					source: "supabase-select",
-					message: error.message,
-				});
-
-			return new Response("Database select failed", { status: 500 });
-		}
 
 		for (const userData of data) {
-			await refreshToken(userData, CRONINTERVALHOURS, supabase, env)
+			const isTimeToRefresh = calcTimeToRefresh(userData, CRON_INTERVAL_HOURS)
+
+			if (isTimeToRefresh) {
+				await refreshToken(userData, supabase, env)
+			}
+
+		}
+		
+		data = await getAllUserData(supabase)
+
+		for (const userData of data) {
+
+			// let scopesObj = validateScope(userData)
+
+			// console.log(scopesObj)
+
+			// const scopesToRun = {
+			// 	"activity": getActivity()
+			// 	"sleep": getSleep()
+			// }
+			
+			const sleepData = await getSleep(supabase, userData)
+
+			if (!sleepData) {
+				console.log("found error")
+				continue
+			}	
+			
+			console.log(sleepData)
+
+			// if (typeof(sleepData) === ) && !sleepData.success)) {
+			// 	continue
+			// }
+
+			
+
+			await insertSleepData(supabase, sleepData.dataFromQuery, sleepData.sleepQueryDate, userData.user_id)
+
+
+
+
+
+
+
+
+			// getActivity
+			// getHeart(userData)
+
 		}
 
 
 
-			// getSleep(userData)
-			// checkActivity
-			// checkHeartRate(userData)
+
 			
 			
 
