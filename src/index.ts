@@ -307,6 +307,10 @@ export default {
 
 		let data = await getAllUserData(supabase)
 
+		if (!data) {
+			return
+		}
+
 		
 		for (const userData of data) {
 			const isTimeToRefresh = calcTimeToRefresh(userData, CRON_INTERVAL_HOURS)
