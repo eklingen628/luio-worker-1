@@ -7,6 +7,7 @@ import { refreshToken, calcTimeToRefresh } from "./refresh";
 import { getData } from "./getData";
 import { insertActivityData } from "./activity";
 import { getQueryDate } from "./getQueryDate";
+import { insertHRTimeSeries } from "./heart";
 
 
 
@@ -358,7 +359,7 @@ export default {
 
 			//possible config values at this time are "getSleep", "getActivity" or "getHeartRate"
 
-			const scopeActions = ["getSleep", "getActivity", "getHeartRate"]
+			const scopeActions = ["getSleep", "getActivity", "getHeartRateTimeSeriesByDate"]
 
 			let testDate = new Date()
 			// testDate.setDate(testDate.getDate() - 3)
@@ -383,8 +384,10 @@ export default {
 						await insertSleepData(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
 						break
 					case "getActivity":
-						await  insertActivityData(supabase,	queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
+						await insertActivityData(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
 						break
+					case "getHeartRate":
+						await insertHRTimeSeries(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
 				}
 
 			}

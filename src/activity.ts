@@ -1,3 +1,5 @@
+import { SupabaseClient } from "@supabase/supabase-js";
+
 export async function insertActivityData(
 	supabase: SupabaseClient<any, "public", any>,
 	data: any,
@@ -37,17 +39,7 @@ export async function insertActivityData(
 		if (error) throw error;
 
 		if (Array.isArray(activities) && activities.length > 0) {
-
-			/*
-
-
-
-
-
-			*/
-
-
-
+			//schema unknown at this time
 
 		}
 
@@ -73,6 +65,42 @@ export async function insertActivityData(
 		}
 
 
+
+			// Insert heart rate zones
+	if (Array.isArray(summary?.heartRateZones) && summary.heartRateZones.length > 0) {
+		for (const zone of summary.heartRateZones) {
+			const { name, min, max, minutes, caloriesOut } = zone;
+			const { error: hrError } = await supabase.from("daily_activity_heart_rate_zones").upsert({
+				user_id,
+				date_queried: dateQueried,
+				name,
+				min,
+				max,
+				minutes,
+				calories_out: caloriesOut,
+			});
+			if (hrError) throw hrError;
+		}
+	}
+
+	// Insert custom heart rate zones
+	if (Array.isArray(summary?.customHeartRateZones) && summary.customHeartRateZones.length > 0) {
+		for (const zone of summary.customHeartRateZones) {
+			const { name, min, max, minutes, caloriesOut } = zone;
+			const { error: customHrError } = await supabase.from("daily_activity_custom_hr_zones").upsert({
+				user_id,
+				date_queried: dateQueried,
+				name,
+				min,
+				max,
+				minutes,
+				calories_out: caloriesOut,
+			});
+			if (customHrError) throw customHrError;
+		}
+	}
+
+
 		
 
 	} catch (err) {
@@ -84,5 +112,6 @@ export async function insertActivityData(
 		return new Response("Unexpected error inserting activity data", { status: 500 });
 	}
 
+	//success
 	return null;
 }

@@ -1,9 +1,10 @@
 
 import { SupabaseClient } from "@supabase/supabase-js";
+import { SleepApiResponse } from "./types";
 
 
 
-export async function insertSleepData(supabase: SupabaseClient<any, "public", any>, data: any, dateQueried: string, user_id: string): Promise<Response | null> {
+export async function insertSleepData(supabase: SupabaseClient<any, "public", any>, data: SleepApiResponse, dateQueried: string, user_id: string): Promise<Response | null> {
 	try {
 
 
@@ -75,7 +76,7 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 						level: l.level,
 						seconds: l.seconds,
 					}));
-					const { error: levelErr } = await supabase.from("sleep_level").upsert(levelEntries,{onConflict: "log_id,level"});
+					const { error: levelErr } = await supabase.from("sleep_level").upsert(levelEntries,{onConflict: "log_id,date_time,level"});
 					if (levelErr) throw levelErr;
 				}
 
@@ -87,7 +88,7 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 						level: l.level,
 						seconds: l.seconds,
 					}));
-					const { error: shortErr } = await supabase.from("sleep_short_level").upsert(shortLevelEntries,{onConflict: "log_id,level"});
+					const { error: shortErr } = await supabase.from("sleep_short_level").upsert(shortLevelEntries,{onConflict: "log_id,date_time,level"});
 					if (shortErr) throw shortErr;
 				}
 

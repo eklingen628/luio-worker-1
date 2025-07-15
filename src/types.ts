@@ -11,12 +11,7 @@ export type UserToken = {
 export type SleepApiResponse = {
   sleep: SleepEntry[];
   summary: {
-    stages: {
-      deep: number;
-      light: number;
-      rem: number;
-      wake: number;
-    };
+    stages: Record<SleepStageLevel, number>;
     totalMinutesAsleep: number;
     totalSleepRecords: number;
     totalTimeInBed: number;
@@ -33,13 +28,7 @@ export type SleepEntry = {
   levels: {
     data: SleepLevel[];
     shortData: SleepLevel[];
-    summary: {
-      [key: string]: {
-        count: number;
-        minutes: number;
-        thirtyDayAvgMinutes: number;
-      };
-    };
+    summary: Record<SleepStageLevel, SleepStageSummary>;
   };
   logId: number;
   minutesAfterWakeup: number;
@@ -54,8 +43,16 @@ export type SleepEntry = {
 
 export type SleepLevel = {
   dateTime: string;
-  level: string;
+  level: SleepStageLevel;
   seconds: number;
+};
+
+export type SleepStageLevel = "wake" | "light" | "deep" | "rem";
+
+export type SleepStageSummary = {
+  count: number;
+  minutes: number;
+  thirtyDayAvgMinutes: number;
 };
 
 
@@ -70,3 +67,72 @@ export type FitBitError = {
   ]
 }
 
+
+export class APIError extends Error {
+	constructor(message: string, public details?: any) {
+		super(message);
+		this.name = "APIError";
+	}
+}
+
+
+export type HeartApiResponse = {
+  "activities-heart": {
+    dateTime: string;
+    value: {
+      restingHeartRate: number;
+      heartRateZones: HeartRateZone[];
+      customHeartRateZones: HeartRateZone[];
+    };
+  }[];
+};
+
+
+
+
+export type ActivitySummaryResponse = {
+  activities: any[]; // or define this if known
+  goals: {
+    activeMinutes: number;
+    caloriesOut: number;
+    distance: number;
+    floors: number;
+    steps: number;
+  };
+  summary: {
+    activeScore: number;
+    activityCalories: number;
+    calorieEstimationMu: number;
+    caloriesBMR: number;
+    caloriesOut: number;
+    caloriesOutUnestimated: number;
+    customHeartRateZones: HeartRateZone[];
+    distances: {
+      activity: string;
+      distance: number;
+    }[];
+    elevation: number;
+    fairlyActiveMinutes: number;
+    floors: number;
+    heartRateZones: HeartRateZone[];
+    lightlyActiveMinutes: number;
+    marginalCalories: number;
+    restingHeartRate: number;
+    sedentaryMinutes: number;
+    steps: number;
+    useEstimation: boolean;
+    veryActiveMinutes: number;
+  };
+};
+
+export type HeartRateZone = {
+  name: string;
+  min: number;
+  max: number;
+  minutes: number;
+  caloriesOut: number;
+};
+
+
+
+export type FitbitApiResponse = SleepApiResponse | ActivitySummaryResponse | HeartApiResponse;

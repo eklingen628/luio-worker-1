@@ -1,14 +1,12 @@
-
-import { FitBitError, SleepApiResponse } from "./types";
-import { getQueryDate } from "./getQueryDate";
-import { APIError } from "./error";
+import { APIError, FitbitApiResponse } from "./types";
 import { SupabaseClient } from "@supabase/supabase-js";
+
 
 
 export async function getData(supabase: SupabaseClient<any, "public", any>, data, config: string, dateQueried: string): 
 Promise<{
     dateQueried: string;
-    dataFromQuery: SleepApiResponse;
+    dataFromQuery: FitbitApiResponse;
 } | null>  {
 
 	if (!dateQueried || !data) {
@@ -25,7 +23,7 @@ Promise<{
         case "getActivity":
             query = `/1/user/${data.user_id}/activities/date/${dateQueried}.json`
             break 
-        case "getHeartRate":
+        case "getHeartRateTimeSeriesByDate":
             query =  `/1/user/${data.user_id}/activities/heart/date/${dateQueried}/1d.json`
             break
 		// case "getProfile":
@@ -75,7 +73,7 @@ Promise<{
 
 
 
-	const dataFromQuery = await res?.json() as SleepApiResponse
+	const dataFromQuery = await res?.json() as FitbitApiResponse
 
 	return {
         dateQueried,
