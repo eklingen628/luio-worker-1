@@ -368,7 +368,7 @@ export default {
 
 			for (const action of scopeActions) {
 				
-				const queriedData = await getData(supabase, userData, action, dateQueried)
+				const queriedData = await getData(userData, action, dateQueried)
 
 				if (!queriedData) {
 					// console.log("found error")

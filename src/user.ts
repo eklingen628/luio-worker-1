@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { FitBitUserIDData } from "./types";
 
 
 export async function insertUserData(supabase: SupabaseClient<any, "public", any>, data): Promise<Response | null>  {
@@ -46,20 +47,30 @@ export async function insertUserData(supabase: SupabaseClient<any, "public", any
 
 
 
+export async function getAllUserData(
+  supabase: SupabaseClient<any, "public", any>
+): Promise<FitBitUserIDData[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from("fitbit_users")
+      .select("*");
 
-export async function getAllUserData(supabase: SupabaseClient<any, "public", any>) {
+    if (error) {
+      console.log({
+        source: "supabase-select",
+        message: error.message,
+      });
+      return null;
+    }
 
-	const { data, error } = await supabase.from("fitbit_users").select("*")
+    return data ?? [];
+  } catch (err) {
+    console.log({
+      source: "getAllUserData",
+      message: (err as Error).message,
+      stack: (err as Error).stack,
+    });
 
-	if (error) {
-		console.log({
-				source: "supabase-select",
-				message: error.message,
-			});
-
-		return new Response("Database select failed", { status: 500 });
-	}
-
-	return data;
+    return null;
+  }
 }
-

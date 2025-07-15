@@ -7,7 +7,7 @@ import { HeartRateZone, HeartApiResponse } from "./types";
 export async function insertHRTimeSeries(
   supabase: SupabaseClient<any, "public", any>,
   data: HeartApiResponse,
-  dateQueried,
+  dateQueried: string,
   user_id: string
 ): Promise<Response | null> {
   try {

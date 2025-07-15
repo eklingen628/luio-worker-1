@@ -1,5 +1,6 @@
 import { UserToken } from "./types";
 import { insertUserData } from "./user";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 //replace with types from supabase?
 export async function refreshToken(userData, supabase: SupabaseClient<any, "public", any>, env: Env) {

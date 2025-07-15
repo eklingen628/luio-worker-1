@@ -1,13 +1,15 @@
-import { APIError, FitbitApiResponse } from "./types";
-import { SupabaseClient } from "@supabase/supabase-js";
+
+import { APIError, FitbitApiResponse, FitBitUserIDData } from "./types";
 
 
 
-export async function getData(supabase: SupabaseClient<any, "public", any>, data, config: string, dateQueried: string): 
+
+export async function getData(data: FitBitUserIDData, config: string, dateQueried: string): 
 Promise<{
     dateQueried: string;
     dataFromQuery: FitbitApiResponse;
 } | null>  {
+
 
 	if (!dateQueried || !data) {
 		console.log("Date queried or data was undefined")

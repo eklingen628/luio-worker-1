@@ -2,7 +2,7 @@
 
 
 //potentially add more dynamic date generation
-export function getQueryDate(refDate?: Date, tzOffsetHours = -5) {
+export function getQueryDate(refDate?: Date, tzOffsetHours = -5): string {
 
     //use either the reference date, or use day before's date
 	const baseDate = refDate ?? new Date(Date.now() - (24 * 60 * 60 * 1000))

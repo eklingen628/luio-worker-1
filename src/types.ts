@@ -1,3 +1,6 @@
+import { Database } from "../database.types";
+
+
 export type UserToken = {
     access_token: string;
     expires_in: number;
@@ -136,3 +139,5 @@ export type HeartRateZone = {
 
 
 export type FitbitApiResponse = SleepApiResponse | ActivitySummaryResponse | HeartApiResponse;
+
+export type FitBitUserIDData = Database['public']['Tables']['fitbit_users']['Row']
