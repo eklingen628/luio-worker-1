@@ -1,77 +1,29 @@
-import { FitBitError, SleepApiResponse } from "./types";
 
-
-//potentially add more dynamic date generation
-function genSleepQueryDate() {
+import { SupabaseClient } from "@supabase/supabase-js";
 
 
 
-}
-
-
-export async function getSleep(supabase: SupabaseClient<any, "public", any>, data): 
-Promise<{
-    sleepQueryDate: string;
-    dataFromQuery: SleepApiResponse;
-} | null>  {
-
-	//date is 24 hours in the past
-	const date = new Date(Date.now() - (24 * 60 * 60 * 1000))
-	
-	const dateIso = date.toISOString()
-
-	const year = date.getUTCFullYear();
-	const month = String(date.getUTCMonth() + 1).padStart(2, "0"); // 01-12
-	const day   = String(date.getUTCDate()).padStart(2, "0");      // 01-31
-
-	const dateString = `${year}-${month}-${day}`; // YYYY-MM-DD
-
-
-	const userQuery = `/1.2/user/${data.user_id}/sleep/date/${dateString}.json`
-
-	let res;
-
-	try {
-		res = await fetch(`https://api.fitbit.com/${userQuery}`, {
-			headers: {
-				"Authorization": `Bearer ${data.access_token}`
-			}
-		});
-	}
-	catch (err) {
-		console.log({
-			source: "getSleep",
-			message: (err as Error).message,
-	})};
-
-	if (!res.ok) {
-		console.log(res)
-		return null
-
-	}
-
-	const resData = await res?.json() as SleepApiResponse
-
-	return {
-		"sleepQueryDate": dateIso,
-		"dataFromQuery": resData
-
-	}
-		
-}
-
-
-
-export async function insertSleepData(supabase: SupabaseClient<any, "public", any>, data: any, queryDate: string, user_id: string): Promise<Response | null> {
+export async function insertSleepData(supabase: SupabaseClient<any, "public", any>, data: any, dateQueried: string, user_id: string): Promise<Response | null> {
 	try {
 
-		const query_id = crypto.randomUUID();
+
 		const sleepEntries = data.sleep;
 		const summary = data.summary;
 
-		// if (Array.isArray(sleepEntries) || sleepEntries.length === 0) return null;
 
-		if (Array.isArray(sleepEntries) && sleepEntries.length > 0) {
+				// sleep_daily_summary
+		const { totalMinutesAsleep, totalSleepRecords, totalTimeInBed } = summary;
+		const { error: summErr } = await supabase.from("sleep_summary").upsert({
+			user_id,
+			date_queried: dateQueried,
+			total_minutes_asleep: totalMinutesAsleep,
+			total_sleep_records: totalSleepRecords,
+			total_time_in_bed: totalTimeInBed,
+		});
+		if (summErr) throw summErr;
+
+
+		if (Array.isArray(sleepEntries) && sleepEntries.length) {
 
 			for (const entry of sleepEntries) {
 				const {
@@ -96,6 +48,7 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 				// sleep_log
 				const { error: logErr } = await supabase.from("sleep_log").upsert({
 					log_id: logId,
+					date_queried: dateQueried,
 					user_id,
 					date_of_sleep: dateOfSleep,
 					duration,
@@ -111,7 +64,6 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 					minutes_to_fall_asleep: minutesToFallAsleep,
 					time_in_bed: timeInBed,
 					type,
-					query_id,
 				});
 				if (logErr) throw logErr;
 
@@ -119,11 +71,11 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 				if (levels?.data?.length) {
 					const levelEntries = levels.data.map(l => ({
 						log_id: logId,
-						datetime: l.dateTime,
+						date_time: l.dateTime,
 						level: l.level,
 						seconds: l.seconds,
 					}));
-					const { error: levelErr } = await supabase.from("sleep_level").upsert(levelEntries);
+					const { error: levelErr } = await supabase.from("sleep_level").upsert(levelEntries,{onConflict: "log_id,level"});
 					if (levelErr) throw levelErr;
 				}
 
@@ -131,11 +83,11 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 				if (levels?.shortData?.length) {
 					const shortLevelEntries = levels.shortData.map(l => ({
 						log_id: logId,
-						datetime: l.dateTime,
+						date_time: l.dateTime,
 						level: l.level,
 						seconds: l.seconds,
 					}));
-					const { error: shortErr } = await supabase.from("sleep_short_level").upsert(shortLevelEntries);
+					const { error: shortErr } = await supabase.from("sleep_short_level").upsert(shortLevelEntries,{onConflict: "log_id,level"});
 					if (shortErr) throw shortErr;
 				}
 
@@ -148,22 +100,11 @@ export async function insertSleepData(supabase: SupabaseClient<any, "public", an
 						minutes: values.minutes,
 						thirty_day_avg_minutes: values.thirtyDayAvgMinutes,
 					}));
-					const { error: sumErr } = await supabase.from("sleep_level_summary").upsert(summaryEntries);
+					const { error: sumErr } = await supabase.from("sleep_level_summary").upsert(summaryEntries,{onConflict: "log_id,level"});
 					if (sumErr) throw sumErr;
 				}
 			}
 		}
-		// sleep_daily_summary
-		const { totalMinutesAsleep, totalSleepRecords, totalTimeInBed } = summary;
-		const { error } = await supabase.from("sleep_summary").upsert({
-			user_id,
-			query_id,
-			query_date: queryDate,
-			total_minutes_asleep: totalMinutesAsleep,
-			total_sleep_records: totalSleepRecords,
-			total_time_in_bed: totalTimeInBed,
-		});
-		if (error) throw error;
 
 
 	} catch (err) {

@@ -1,3 +1,4 @@
+import { SupabaseClient } from "@supabase/supabase-js";
 
 
 export async function insertUserData(supabase: SupabaseClient<any, "public", any>, data): Promise<Response | null>  {

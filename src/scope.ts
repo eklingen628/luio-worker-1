@@ -1,0 +1,26 @@
+
+export function validateScope(userData) {
+
+	const requiredScopes = env.SCOPES_NEEDED
+
+	const presentScopes = userData?.scope.split(" ").map(s => s.trim()).filter(s => s.length > 0) ?? []
+	const user_id = userData?.user_id ?? "user_id_not_found"
+	
+	const missingScopes = requiredScopes.filter(
+      (scope: string) => !presentScopes.includes(scope)
+    );
+
+	const availableScopes = requiredScopes.filter(
+      (scope: string) => presentScopes.includes(scope)
+    );
+
+	let allScopesPresent = missingScopes.length === 0
+	return {
+		user_id,
+		allScopesPresent,
+		availableScopes,
+		missingScopes,
+	}
+}
+
+

@@ -1,56 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { createClient } from "@supabase/supabase-js";
 import { UserToken} from "./types";
-import { insertSleepData, getSleep } from "./sleep";
+import { insertSleepData } from "./sleep";
 import { getAllUserData, insertUserData } from "./user";
 import { refreshToken, calcTimeToRefresh } from "./refresh";
-
-
-
-
-function validateScope(userData) {
-
-	const requiredScopes = ["activity", "sleep", "heartrate"]
-
-	const presentScopes = userData?.scope.split(" ").map(s => s.trim()).filter(s => s.length > 0) ?? []
-	const user_id = userData?.user_id ?? "user_id_not_found"
-	
-	const missingScopes = requiredScopes.filter(
-      scope => !presentScopes.includes(scope)
-    );
-
-	const availableScopes = requiredScopes.filter(
-      scope => presentScopes.includes(scope)
-    );
-
-	let allScopesPresent = missingScopes.length === 0
-	return {
-		user_id,
-		allScopesPresent,
-		availableScopes,
-		missingScopes,
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import { getData } from "./getData";
+import { insertActivityData } from "./activity";
+import { getQueryDate } from "./getQueryDate";
 
 
 
@@ -169,7 +125,7 @@ export default {
 
 			fitbitAuthUrl.searchParams.set("client_id", env.FITBIT_CLIENT_ID)
 			fitbitAuthUrl.searchParams.set("response_type", "code")
-			fitbitAuthUrl.searchParams.set("scope", "activity cardio_fitness electrocardiogram heartrate irregular_rhythm_notifications location nutrition oxygen_saturation profile respiratory_rate settings sleep social temperature weight")
+			fitbitAuthUrl.searchParams.set("scope", env.SCOPES_NEEDED)
 			fitbitAuthUrl.searchParams.set("redirect_uri", redirectUri)
 			fitbitAuthUrl.searchParams.set("code_challenge", code_challenge)
 			fitbitAuthUrl.searchParams.set("code_challenge_method", "S256")
@@ -350,7 +306,7 @@ export default {
 
 		let data = await getAllUserData(supabase)
 
-
+		
 		for (const userData of data) {
 			const isTimeToRefresh = calcTimeToRefresh(userData, CRON_INTERVAL_HOURS)
 
@@ -359,8 +315,33 @@ export default {
 			}
 
 		}
+
+		
 		
 		data = await getAllUserData(supabase)
+
+		
+
+
+		//for testing individual pulls
+		// for (const userData of data) {
+
+		// 	let testDate = new Date()
+		// 	// testDate.setDate(testDate.getDate() - 3)
+
+		// 	const dateQueried = getQueryDate(testDate)
+
+		// 	const action = "getSleep"
+
+		// 	const queriedData = await getData(supabase, userData, action, dateQueried)
+
+		// 	console.log(queriedData?.dataFromQuery)
+
+		// }
+
+		
+
+		
 
 		for (const userData of data) {
 
@@ -369,26 +350,53 @@ export default {
 			// console.log(scopesObj)
 
 			// const scopesToRun = {
-			// 	"activity": getActivity()
-			// 	"sleep": getSleep()
+			// 	"activity": "getActivity"
+			// 	"sleep": "getSleep"
 			// }
 			
-			const sleepData = await getSleep(supabase, userData)
+		
 
-			if (!sleepData) {
-				console.log("found error")
-				continue
-			}	
-			
-			console.log(sleepData)
+			//possible config values at this time are "getSleep", "getActivity" or "getHeartRate"
+
+			const scopeActions = ["getSleep", "getActivity", "getHeartRate"]
+
+			let testDate = new Date()
+			// testDate.setDate(testDate.getDate() - 3)
+
+			const dateQueried = getQueryDate(testDate)
+
+			for (const action of scopeActions) {
+				
+				const queriedData = await getData(supabase, userData, action, dateQueried)
+
+				if (!queriedData) {
+					// console.log("found error")
+					continue
+				}	
+				
+				console.log(queriedData?.dataFromQuery)
+
+				
+
+				switch (action) {
+					case "getSleep":
+						await insertSleepData(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
+						break
+					case "getActivity":
+						await  insertActivityData(supabase,	queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
+						break
+				}
+
+			}
+
+
 
 			// if (typeof(sleepData) === ) && !sleepData.success)) {
 			// 	continue
 			// }
 
-			
 
-			await insertSleepData(supabase, sleepData.dataFromQuery, sleepData.sleepQueryDate, userData.user_id)
+
 
 
 
@@ -402,9 +410,9 @@ export default {
 
 		}
 
+		
 
-
-
+		
 			
 			
 
