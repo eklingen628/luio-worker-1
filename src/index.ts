@@ -8,51 +8,11 @@ import { getData } from "./getData";
 import { insertActivityData } from "./activity";
 import { getQueryDate } from "./getQueryDate";
 import { insertHRTimeSeries } from "./heart";
+import { generatePKCE} from "../auth";
 
 
 
 
-
-
-
-function arrayBufferToBase64( buffer: ArrayBuffer ) {
-    let binary = "";
-    const bytes = new Uint8Array( buffer );
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode( bytes[ i ] );
-    }
-    return btoa( binary );
-}
-
-function toBase64Url(base64: string) {
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-
-
-async function generatePKCE() {
-	const randomBuffer = crypto.getRandomValues(new Uint8Array(48)).buffer;
-
-	const verifierString = toBase64Url(arrayBufferToBase64(randomBuffer))
-
-	const encoder = new TextEncoder();
-
-	const data = encoder.encode(verifierString);
-
-
-
-	const chalBuffer = await crypto.subtle.digest("SHA-256", data);
-
-	const challengeString = toBase64Url(arrayBufferToBase64(chalBuffer))
-
-
-	return {
-		code_verifier: verifierString,
-		code_challenge: challengeString
-	}
-
-}
 
 
 
@@ -68,12 +28,7 @@ export default {
 	 */
 	async fetch(request, env, ctx): Promise<Response> {
 		
-
-
 		const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
-
-
-
 
 		const url = new URL(request.url)
 
@@ -94,8 +49,6 @@ export default {
 		// `?raw` tells esbuild to bundle the file as a plain string.
 		
 
-
-
 		// Serve the page only on `/` (and `/index.html` for convenience)
 		if (url.pathname === "/" || url.pathname === "/login.html") {
 		// return new Response(loginHtml, {
@@ -104,15 +57,6 @@ export default {
 
 			return env.ASSETS.fetch(request);
 		}
-
-
-
-
-
-
-
-
-
 
 
 
@@ -365,36 +309,33 @@ export default {
 
 			const scopeActions = ["getSleep", "getActivity", "getHeartRateTimeSeriesByDate"]
 
+			const dataHandlers = {
+				getSleep: insertSleepData,
+				getActivity: insertActivityData,
+				getHeartRateTimeSeriesByDate: insertHRTimeSeries,
+			};
+
 			let testDate = new Date()
-			// testDate.setDate(testDate.getDate() - 3)
+			testDate.setDate(testDate.getDate() - 2)
 
 			const dateQueried = getQueryDate(testDate)
 
-			for (const action of scopeActions) {
-				
-				const queriedData = await getData(userData, action, dateQueried)
+			for (const [action, insertFn] of Object.entries(dataHandlers)) {
+  				const queriedData = await getData(userData, action, dateQueried);
 
-				if (!queriedData) {
-					// console.log("found error")
-					continue
-				}	
-				
-				console.log(queriedData?.dataFromQuery)
+  				if (!queriedData) continue;
 
-				
+				console.log(queriedData.dataFromQuery)
 
-				switch (action) {
-					case "getSleep":
-						await insertSleepData(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
-						break
-					case "getActivity":
-						await insertActivityData(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
-						break
-					case "getHeartRate":
-						await insertHRTimeSeries(supabase, queriedData.dataFromQuery, queriedData.dateQueried, userData.user_id)
-				}
-
+				await insertFn(supabase, queriedData.dataFromQuery, dateQueried, userData.user_id);
 			}
+
+
+
+
+
+
+
 
 
 
