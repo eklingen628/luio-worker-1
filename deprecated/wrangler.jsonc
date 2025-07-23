@@ -1,0 +1,96 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "luio-worker-1",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-06-27",
+	"migrations": [
+		// {
+		// 	"new_sqlite_classes": [
+		// 		"MyDurableObject"
+		// 	],
+		// 	"tag": "v1",
+		// },
+		// {
+		// 	"tag": "v3",
+		// 	"deleted_classes": ["TokenStorage"]
+		// }
+	],
+	"durable_objects": {
+		"bindings": [
+			// {
+			// 	"class_name": "MyDurableObject",
+			// 	"name": "MY_DURABLE_OBJECT"
+			// },
+			// {
+			// 	"class_name": "TokenStorage",
+			// 	"name": "TOKENS"
+			// }
+
+		]
+	},
+	"observability": {
+		"enabled": true
+	},
+	"vars": {
+		"REDIRECT_URI": "https://luio-worker-1.klingene.workers.dev/callback",
+		"SUPABASE_URL": "https://kxidhvroixdxwlgkkwff.supabase.co",
+		"SCOPES_NEEDED": "activity heartrate sleep",
+		"ALL_POSSIBLE_SCOPES": "activity cardio_fitness electrocardiogram heartrate irregular_rhythm_notifications location nutrition oxygen_saturation profile respiratory_rate settings sleep social temperature weight",
+		"AUTH_URI": "https://luio-worker-1.klingene.workers.dev/auth"
+	},
+	"kv_namespaces": [
+		{
+		"binding": "TOKENS",
+		"id": "d07d0e036acf4a15bea91530ba5e81ac"
+		}
+	],
+	"assets": {
+		"not_found_handling": "404-page",
+		"directory": "./public",
+		"binding": "ASSETS",
+		"html_handling": "auto-trailing-slash",
+		
+	},
+
+
+
+
+	/**
+	 * Smart Placement
+	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 */
+	// "placement": { "mode": "smart" },
+
+	/**
+	 * Bindings
+	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	 * databases, object storage, AI inference, real-time communication and more.
+	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 */
+
+	/**
+	 * Environment Variables
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 */
+	// "vars": { "MY_VARIABLE": "production_value" },
+	/**
+	 * Note: Use secrets to store sensitive data.
+	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 */
+
+	/**
+	 * Static Assets
+	 * https://developers.cloudflare.com/workers/static-assets/binding/
+	 */
+	// "assets": { "directory": "./public/", "binding": "ASSETS" },
+
+	/**
+	 * Service Bindings (communicate between multiple Workers)
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+	 */
+	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+}
