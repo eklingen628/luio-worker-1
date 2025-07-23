@@ -140,4 +140,14 @@ export type HeartRateZone = {
 
 export type FitbitApiResponse = SleepApiResponse | ActivitySummaryResponse | HeartApiResponse;
 
-export type FitBitUserIDData = Database['public']['Tables']['fitbit_users']['Row']
+// export type FitBitUserIDData = Database['public']['Tables']['fitbit_users']['Row']
+
+export type FitBitUserIDData ={
+    access_token: string;
+    expires_at: string | null;
+    first_added: string;
+    refresh_token: string;
+    scope: string;
+    token_type: string;
+    user_id: string;
+}
