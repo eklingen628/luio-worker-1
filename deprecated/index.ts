@@ -1,13 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import { UserToken } from './types';
-import { insertSleepData } from './sleep';
-import { getAllUserData, insertUserData } from './user';
-import { refreshToken, calcTimeToRefresh } from './refresh';
-import { getData } from './getData';
-import { insertActivityData } from './activity';
-import { insertHRTimeSeries } from './heart';
-import { generatePKCE } from './auth';
-import { genDates } from './date';
+import { UserToken } from '../src/types';
+import { insertSleepData } from '../src/sleep';
+import { getAllUserData, insertUserData } from '../src/user';
+import { refreshToken, calcTimeToRefresh } from '../src/refresh';
+import { getData } from '../src/getData';
+import { insertActivityData } from '../src/activity';
+import { insertHRTimeSeries } from '../src/heart';
+import { generatePKCE } from '../src/auth';
+import { genDates } from '../src/date';
 
 export default {
 	/**

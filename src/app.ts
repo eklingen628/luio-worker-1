@@ -1,13 +1,14 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import dotenv from 'dotenv';
 import { generatePKCE } from './auth';
 import cookieParser from 'cookie-parser';
-import pool from './db';
+import { pool } from './db';
 import cron from 'node-cron';
 import { runDailyJob } from './scheduled';
+import { UserToken } from './types';
+import { insertUserData } from './user';
 
-dotenv.config();
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -76,16 +77,28 @@ app.get('/callback', async (req: Request, res: Response) => {
         'Authorization': `Basic ${encodedAuth}`,
       },
     });
-    const data = await fitbitRes.json();
-    console.log('Fitbit token response:', data);
+  
     if (!fitbitRes.ok) {
       return res.status(400).send('Error in Token Message received');
     }
-    // For now, just show a success message
-    res.send('Token received and logged. (DB logic not yet implemented)');
-  } catch (err) {
-    console.error('Error exchanging code for token:', err);
-    res.status(500).send('Internal server error');
+  
+    const data = await fitbitRes.json() as UserToken;
+  
+    await insertUserData(data);
+  
+    // Success
+    res.sendFile(path.join(__dirname, '../public/login-success.html'));
+  
+  } catch (err: any) {
+    console.error('Error in callback processing:', err);
+    
+    // Check if it's a DB error vs API error if needed
+    if (err.code) {
+      console.error('Database error:', err);
+      res.status(500).send('Failed to save token to database');
+    } else {
+      res.status(500).send('Internal server error');
+    }
   }
 });
 
