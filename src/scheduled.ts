@@ -1,4 +1,4 @@
-import pool from './db';
+import { pool } from './db';
 
 export async function runDailyJob() {
   // TODO: Implement your daily scheduled logic here
