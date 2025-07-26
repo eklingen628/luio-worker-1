@@ -1,7 +1,20 @@
 import { Pool } from 'pg';
 
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export default pool; 
+export const executeQuery = async (text: string, params: any[]) => {
+  try {
+    const res = await pool.query(text, params);
+    return res;
+  } catch (error) {
+    console.error('Query failed:', { 
+      sql: text, 
+      params, 
+      error: error instanceof Error ? error.message : String(error),
+      isAuthError: error instanceof Error ? error.message.includes('authentication') : false
+    });
+    throw error;
+  }
+}

@@ -1,62 +1,37 @@
-import { SupabaseClient } from '@supabase/supabase-js';
+import { executeQuery } from './db';
+import { UserToken } from './types';
 import { FitBitUserIDData } from './types';
 
-export async function insertUserData(supabase: SupabaseClient<any, 'public', any>, data): Promise<Response | null> {
-	try {
-		const { error } = await supabase.from('fitbit_users').upsert({
-			user_id: data.user_id,
-			access_token: data.access_token,
-			refresh_token: data.refresh_token,
-			expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString(),
-			token_type: data.token_type,
-			scope: data.scope,
-		});
+export async function insertUserData(data: UserToken): Promise<Response | null> {
 
-		if (error) {
-			// Replace this in prod:
-			// console.error("Insert failed: ", error);
+	const expires_at = new Date(Date.now() + data.expires_in * 1000).toISOString();
 
-			console.log({
-				source: 'supabase-upsert-user',
-				message: error.message,
-				user_id: data.user_id,
-			});
+	await executeQuery(			
+		`INSERT INTO fitbit_users (user_id, access_token, refresh_token, expires_at, token_type, scope) 
+		VALUES ($1, $2, $3, $4, $5, $6) 
+		ON CONFLICT (user_id) 
+		DO UPDATE SET 
+			access_token = EXCLUDED.access_token, 
+			refresh_token = EXCLUDED.refresh_token, 
+			expires_at = EXCLUDED.expires_at, 
+			token_type = EXCLUDED.token_type, 
+			scope = EXCLUDED.scope`,
+		[data.user_id, data.access_token, data.refresh_token, expires_at, data.token_type, data.scope])
+	
 
-			return new Response(error.message, { status: 500 });
-		}
-	} catch (err) {
-		console.log({
-			source: 'supabase-upsert-user',
-			message: (err as Error).message,
-			stack: (err as Error).stack,
-		});
-
-		return new Response('Unexpected error', { status: 500 });
-	}
-	//Null indicates success
 	return null;
 }
 
-export async function getAllUserData(supabase: SupabaseClient<any, 'public', any>): Promise<FitBitUserIDData[] | null> {
-	try {
-		const { data, error } = await supabase.from('fitbit_users').select('*');
+export async function getAllUserData(): Promise<FitBitUserIDData[] | null> {
+	const result = await executeQuery('SELECT * FROM fitbit_users', []);
 
-		if (error) {
-			console.log({
-				source: 'supabase-select',
-				message: error.message,
-			});
-			return null;
-		}
-
-		return data ?? [];
-	} catch (err) {
+	if (result.rowCount === 0) {
 		console.log({
-			source: 'getAllUserData',
-			message: (err as Error).message,
-			stack: (err as Error).stack,
+			source: 'pool-select',
+			message: "No users found",
 		});
-
 		return null;
 	}
+
+	return result.rows ?? [];
 }
