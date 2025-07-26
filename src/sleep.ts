@@ -1,122 +1,152 @@
 
-import { SupabaseClient } from "@supabase/supabase-js";
-import { SleepApiResponse } from "./types";
+import { pool } from './db';
+import { SleepApiResponse } from './types';
+import { Pool } from 'pg';
 
+export async function insertSleepData(
+  pool: Pool,
+  data: SleepApiResponse,
+  dateQueried: string,
+  user_id: string
+): Promise<Response | null> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
+    const sleepEntries = data.sleep;
+    const summary = data.summary;
 
-export async function insertSleepData(supabase: SupabaseClient<any, "public", any>, data: SleepApiResponse, dateQueried: string, user_id: string): Promise<Response | null> {
-	try {
+    // sleep_summary
+    const { totalMinutesAsleep, totalSleepRecords, totalTimeInBed } = summary;
+    await client.query(
+      `INSERT INTO sleep_summary (user_id, date_queried, total_minutes_asleep, total_sleep_records, total_time_in_bed)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id, date_queried) DO UPDATE SET
+         total_minutes_asleep = EXCLUDED.total_minutes_asleep,
+         total_sleep_records = EXCLUDED.total_sleep_records,
+         total_time_in_bed = EXCLUDED.total_time_in_bed`,
+      [user_id, dateQueried, totalMinutesAsleep, totalSleepRecords, totalTimeInBed]
+    );
 
+    if (Array.isArray(sleepEntries) && sleepEntries.length) {
+      for (const entry of sleepEntries) {
+        const {
+          logId,
+          dateOfSleep,
+          duration,
+          efficiency,
+          endTime,
+          infoCode,
+          isMainSleep,
+          startTime,
+          logType,
+          minutesAfterWakeup,
+          minutesAsleep,
+          minutesAwake,
+          minutesToFallAsleep,
+          timeInBed,
+          type,
+          levels
+        } = entry;
 
-		const sleepEntries = data.sleep;
-		const summary = data.summary;
+        // sleep_log
+        await client.query(
+          `INSERT INTO sleep_log (log_id, date_queried, user_id, date_of_sleep, duration, efficiency, end_time, info_code, is_main_sleep, start_time, log_type, minutes_after_wakeup, minutes_asleep, minutes_awake, minutes_to_fall_asleep, time_in_bed, type)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+           ON CONFLICT (log_id) DO UPDATE SET
+             date_queried = EXCLUDED.date_queried,
+             user_id = EXCLUDED.user_id,
+             date_of_sleep = EXCLUDED.date_of_sleep,
+             duration = EXCLUDED.duration,
+             efficiency = EXCLUDED.efficiency,
+             end_time = EXCLUDED.end_time,
+             info_code = EXCLUDED.info_code,
+             is_main_sleep = EXCLUDED.is_main_sleep,
+             start_time = EXCLUDED.start_time,
+             log_type = EXCLUDED.log_type,
+             minutes_after_wakeup = EXCLUDED.minutes_after_wakeup,
+             minutes_asleep = EXCLUDED.minutes_asleep,
+             minutes_awake = EXCLUDED.minutes_awake,
+             minutes_to_fall_asleep = EXCLUDED.minutes_to_fall_asleep,
+             time_in_bed = EXCLUDED.time_in_bed,
+             type = EXCLUDED.type`,
+          [
+            logId,
+            dateQueried,
+            user_id,
+            dateOfSleep,
+            duration,
+            efficiency,
+            endTime,
+            infoCode,
+            isMainSleep,
+            startTime,
+            logType,
+            minutesAfterWakeup,
+            minutesAsleep,
+            minutesAwake,
+            minutesToFallAsleep,
+            timeInBed,
+            type,
+          ]
+        );
 
+        // sleep_level
+        if (levels?.data?.length) {
+          for (const l of levels.data) {
+            await client.query(
+              `INSERT INTO sleep_level (log_id, date_time, level, seconds)
+               VALUES ($1, $2, $3, $4)
+               ON CONFLICT (log_id, date_time, level) DO UPDATE SET
+                 seconds = EXCLUDED.seconds`,
+              [logId, l.dateTime, l.level, l.seconds]
+            );
+          }
+        }
 
-				// sleep_daily_summary
-		const { totalMinutesAsleep, totalSleepRecords, totalTimeInBed } = summary;
-		const { error: summErr } = await supabase.from("sleep_summary").upsert({
-			user_id,
-			date_queried: dateQueried,
-			total_minutes_asleep: totalMinutesAsleep,
-			total_sleep_records: totalSleepRecords,
-			total_time_in_bed: totalTimeInBed,
-		});
-		if (summErr) throw summErr;
+        // sleep_short_level
+        if (levels?.shortData?.length) {
+          for (const l of levels.shortData) {
+            await client.query(
+              `INSERT INTO sleep_short_level (log_id, date_time, level, seconds)
+               VALUES ($1, $2, $3, $4)
+               ON CONFLICT (log_id, date_time, level) DO UPDATE SET
+                 seconds = EXCLUDED.seconds`,
+              [logId, l.dateTime, l.level, l.seconds]
+            );
+          }
+        }
 
+        // sleep_level_summary
+        if (levels?.summary) {
+          for (const [level, values] of Object.entries(levels.summary)) {
+            await client.query(
+              `INSERT INTO sleep_level_summary (log_id, level, count, minutes, thirty_day_avg_minutes)
+               VALUES ($1, $2, $3, $4, $5)
+               ON CONFLICT (log_id, level) DO UPDATE SET
+                 count = EXCLUDED.count,
+                 minutes = EXCLUDED.minutes,
+                 thirty_day_avg_minutes = EXCLUDED.thirty_day_avg_minutes`,
+              [logId, level, values.count, values.minutes, values.thirtyDayAvgMinutes]
+            );
+          }
+        }
+      }
+    }
 
-		if (Array.isArray(sleepEntries) && sleepEntries.length) {
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.log({
+      source: 'insertSleepData',
+      message: (err as Error).message,
+      stack: (err as Error).stack,
+    });
+    return new Response('Unexpected error inserting sleep data', { status: 500 });
+  } finally {
+    client.release();
+  }
 
-			for (const entry of sleepEntries) {
-				const {
-					logId,
-					dateOfSleep,
-					duration,
-					efficiency,
-					endTime,
-					infoCode,
-					isMainSleep,
-					startTime,
-					logType,
-					minutesAfterWakeup,
-					minutesAsleep,
-					minutesAwake,
-					minutesToFallAsleep,
-					timeInBed,
-					type,
-					levels
-				} = entry;
-
-				// sleep_log
-				const { error: logErr } = await supabase.from("sleep_log").upsert({
-					log_id: logId,
-					date_queried: dateQueried,
-					user_id,
-					date_of_sleep: dateOfSleep,
-					duration,
-					efficiency,
-					end_time: endTime,
-					info_code: infoCode,
-					is_main_sleep: isMainSleep,
-					start_time: startTime,
-					log_type: logType,
-					minutes_after_wakeup: minutesAfterWakeup,
-					minutes_asleep: minutesAsleep,
-					minutes_awake: minutesAwake,
-					minutes_to_fall_asleep: minutesToFallAsleep,
-					time_in_bed: timeInBed,
-					type,
-				});
-				if (logErr) throw logErr;
-
-				// sleep_level
-				if (levels?.data?.length) {
-					const levelEntries = levels.data.map(l => ({
-						log_id: logId,
-						date_time: l.dateTime,
-						level: l.level,
-						seconds: l.seconds,
-					}));
-					const { error: levelErr } = await supabase.from("sleep_level").upsert(levelEntries,{onConflict: "log_id,date_time,level"});
-					if (levelErr) throw levelErr;
-				}
-
-				// sleep_short_level
-				if (levels?.shortData?.length) {
-					const shortLevelEntries = levels.shortData.map(l => ({
-						log_id: logId,
-						date_time: l.dateTime,
-						level: l.level,
-						seconds: l.seconds,
-					}));
-					const { error: shortErr } = await supabase.from("sleep_short_level").upsert(shortLevelEntries,{onConflict: "log_id,date_time,level"});
-					if (shortErr) throw shortErr;
-				}
-
-				// sleep_level_summary
-				if (levels?.summary) {
-					const summaryEntries = Object.entries(levels.summary).map(([level, values]) => ({
-						log_id: logId,
-						level,
-						count: values.count,
-						minutes: values.minutes,
-						thirty_day_avg_minutes: values.thirtyDayAvgMinutes,
-					}));
-					const { error: sumErr } = await supabase.from("sleep_level_summary").upsert(summaryEntries,{onConflict: "log_id,level"});
-					if (sumErr) throw sumErr;
-				}
-			}
-		}
-
-
-	} catch (err) {
-		console.log({
-			source: "insertSleepData",
-			message: (err as Error).message,
-			stack: (err as Error).stack,
-		});
-		return new Response("Unexpected error inserting sleep data", { status: 500 });
-	}
-
-	// Success
-	return null;
+  // Success
+  return null;
 }
