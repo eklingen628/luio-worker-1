@@ -1,8 +1,7 @@
-import { SupabaseClient } from '@supabase/supabase-js';
-import { HeartRateZone, HeartApiResponse } from './types';
+import { executeQuery } from './db';
+import { HeartRateZone, HeartApiResponse, HrvResponse } from './types';
 
 export async function insertHRTimeSeries(
-	supabase: SupabaseClient<any, 'public', any>,
 	data: HeartApiResponse,
 	dateQueried: string,
 	user_id: string
@@ -14,60 +13,50 @@ export async function insertHRTimeSeries(
 			const { value } = entry;
 			const { restingHeartRate, heartRateZones, customHeartRateZones } = value;
 
-			// 1. Upsert summary
-			const { data: summaryRow, error: summaryError } = await supabase
-				.from('heart_activity_summary')
-				.upsert(
-					{
-						user_id,
-						date_queried: dateQueried,
-						resting_heart_rate: restingHeartRate,
-					},
-					{ onConflict: 'user_id,date_queried' }
-				)
-				.select('summary_id')
-				.single();
+			// 1. Upsert summary using (user_id, date_queried) as primary key
+			await executeQuery(`
+				INSERT INTO heart_activity_summary (user_id, date_queried, resting_heart_rate)
+				VALUES ($1, $2, $3)
+				ON CONFLICT (user_id, date_queried) 
+				DO UPDATE SET resting_heart_rate = EXCLUDED.resting_heart_rate
+			`, [user_id, dateQueried, restingHeartRate]);
 
-			if (summaryError || !summaryRow) throw summaryError;
-
-			const summary_id = summaryRow.summary_id;
-
-			// 2. Delete existing zones
-			await Promise.all([
-				supabase.from('heart_rate_zone').delete().eq('summary_id', summary_id),
-				supabase.from('custom_heart_rate_zone').delete().eq('summary_id', summary_id),
-			]);
-
-			// 3. Insert heart_rate_zone
+			// 2. Insert heart_rate_zone using (user_id, date_queried, name) as primary key
 			if (heartRateZones?.length) {
-				const zones = heartRateZones.map((z) => ({
-					summary_id,
-					name: z.name,
-					min: z.min,
-					max: z.max,
-					minutes: z.minutes,
-					calories_out: z.caloriesOut,
-				}));
-
-				const { error: zoneErr } = await supabase.from('heart_rate_zone').insert(zones);
-				if (zoneErr) throw zoneErr;
+				for (const zone of heartRateZones) {
+					await executeQuery(`
+						INSERT INTO heart_rate_zone (user_id, date_queried, name, min, max, minutes, calories_out)
+						VALUES ($1, $2, $3, $4, $5, $6, $7)
+						ON CONFLICT (user_id, date_queried, name) 
+						DO UPDATE SET 
+							min = EXCLUDED.min,
+							max = EXCLUDED.max,
+							minutes = EXCLUDED.minutes,
+							calories_out = EXCLUDED.calories_out
+					`, [user_id, dateQueried, zone.name, zone.min, zone.max, zone.minutes, zone.caloriesOut]);
+				}
 			}
 
-			// 4. Insert custom_heart_rate_zone
+			// 3. Insert custom_heart_rate_zone using (user_id, date_queried, name) as primary key
 			if (customHeartRateZones?.length) {
-				const customZones = customHeartRateZones.map((z) => ({
-					summary_id,
-					name: z.name,
-					min: z.min,
-					max: z.max,
-					minutes: z.minutes,
-					calories_out: z.caloriesOut,
-				}));
-
-				const { error: customErr } = await supabase.from('custom_heart_rate_zone').insert(customZones);
-				if (customErr) throw customErr;
+				for (const zone of customHeartRateZones) {
+					await executeQuery(`
+						INSERT INTO custom_heart_rate_zone (user_id, date_queried, name, min, max, minutes, calories_out)
+						VALUES ($1, $2, $3, $4, $5, $6, $7)
+						ON CONFLICT (user_id, date_queried, name) 
+						DO UPDATE SET 
+							min = EXCLUDED.min,
+							max = EXCLUDED.max,
+							minutes = EXCLUDED.minutes,
+							calories_out = EXCLUDED.calories_out
+					`, [user_id, dateQueried, zone.name, zone.min, zone.max, zone.minutes, zone.caloriesOut]);
+				}
 			}
 		}
+
+		console.log(`Successfully inserted heart rate data for user ${user_id} on ${dateQueried}`);
+		return null;
+
 	} catch (err) {
 		console.log({
 			source: 'insertHeartData',
@@ -76,7 +65,42 @@ export async function insertHRTimeSeries(
 		});
 		return new Response('Unexpected error inserting heart data', { status: 500 });
 	}
+}
 
-	//indicates success
-	return null;
+
+export async function insertHRVData(
+	data: HrvResponse,
+	dateQueried: string,
+	user_id: string
+): Promise<Response | null> {
+	try {
+		const entries = data.hrv;
+
+		for (const entry of entries) {
+			const { value } = entry;
+			const { dailyRmssd, deepRmssd } = value;
+		
+
+			await executeQuery(`INSERT INTO hrv_summary (user_id, date_queried, daily_rmssd, deep_rmssd)
+				VALUES ($1, $2, $3, $4)
+				ON CONFLICT (user_id, date_queried)
+				DO UPDATE SET
+					daily_rmssd = EXCLUDED.daily_rmssd,
+					deep_rmssd = EXCLUDED.deep_rmssd`, 
+					[user_id, dateQueried, dailyRmssd, deepRmssd]
+				);
+
+		}
+
+
+		return null;
+
+	} catch (err) {
+		console.log({
+			source: 'insertHRVData',
+			message: (err as Error).message,
+			stack: (err as Error).stack,
+		});
+		return new Response('Unexpected error inserting HRV data', { status: 500 });
+	}
 }

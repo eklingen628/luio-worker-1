@@ -1,24 +1,19 @@
 
-import { pool } from './db';
+import { executeQuery } from './db';
 import { SleepApiResponse } from './types';
-import { Pool } from 'pg';
 
 export async function insertSleepData(
-  pool: Pool,
   data: SleepApiResponse,
   dateQueried: string,
   user_id: string
 ): Promise<Response | null> {
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-
     const sleepEntries = data.sleep;
     const summary = data.summary;
 
     // sleep_summary
     const { totalMinutesAsleep, totalSleepRecords, totalTimeInBed } = summary;
-    await client.query(
+    await executeQuery(
       `INSERT INTO sleep_summary (user_id, date_queried, total_minutes_asleep, total_sleep_records, total_time_in_bed)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, date_queried) DO UPDATE SET
@@ -50,7 +45,7 @@ export async function insertSleepData(
         } = entry;
 
         // sleep_log
-        await client.query(
+        await executeQuery(
           `INSERT INTO sleep_log (log_id, date_queried, user_id, date_of_sleep, duration, efficiency, end_time, info_code, is_main_sleep, start_time, log_type, minutes_after_wakeup, minutes_asleep, minutes_awake, minutes_to_fall_asleep, time_in_bed, type)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
            ON CONFLICT (log_id) DO UPDATE SET
@@ -94,7 +89,7 @@ export async function insertSleepData(
         // sleep_level
         if (levels?.data?.length) {
           for (const l of levels.data) {
-            await client.query(
+            await executeQuery(
               `INSERT INTO sleep_level (log_id, date_time, level, seconds)
                VALUES ($1, $2, $3, $4)
                ON CONFLICT (log_id, date_time, level) DO UPDATE SET
@@ -107,7 +102,7 @@ export async function insertSleepData(
         // sleep_short_level
         if (levels?.shortData?.length) {
           for (const l of levels.shortData) {
-            await client.query(
+            await executeQuery(
               `INSERT INTO sleep_short_level (log_id, date_time, level, seconds)
                VALUES ($1, $2, $3, $4)
                ON CONFLICT (log_id, date_time, level) DO UPDATE SET
@@ -120,7 +115,7 @@ export async function insertSleepData(
         // sleep_level_summary
         if (levels?.summary) {
           for (const [level, values] of Object.entries(levels.summary)) {
-            await client.query(
+            await executeQuery(
               `INSERT INTO sleep_level_summary (log_id, level, count, minutes, thirty_day_avg_minutes)
                VALUES ($1, $2, $3, $4, $5)
                ON CONFLICT (log_id, level) DO UPDATE SET
@@ -134,19 +129,14 @@ export async function insertSleepData(
       }
     }
 
-    await client.query('COMMIT');
+    return null;
+
   } catch (err) {
-    await client.query('ROLLBACK');
     console.log({
       source: 'insertSleepData',
       message: (err as Error).message,
       stack: (err as Error).stack,
     });
     return new Response('Unexpected error inserting sleep data', { status: 500 });
-  } finally {
-    client.release();
   }
-
-  // Success
-  return null;
 }
