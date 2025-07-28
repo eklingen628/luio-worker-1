@@ -176,7 +176,8 @@ dist
 #schema
 
 .schema
-
+schema/*
 
 .cursorignore
 
+.test.app.ts

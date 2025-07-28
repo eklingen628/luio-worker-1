@@ -2,7 +2,7 @@ import { UserToken } from "./types";
 import { insertUserData } from "./user";
 import { FitBitUserIDData } from "./types";
 
-export async function refreshToken(userData: UserToken): Promise<boolean> {
+export async function refreshToken(userData: FitBitUserIDData): Promise<boolean> {
   const tokenURL = new URL("https://api.fitbit.com/oauth2/token");
 
   const body = new URLSearchParams();

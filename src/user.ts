@@ -35,3 +35,18 @@ export async function getAllUserData(): Promise<FitBitUserIDData[] | null> {
 
 	return result.rows ?? [];
 }
+
+
+export async function getOneUserData(userId: string): Promise<FitBitUserIDData | null> {
+	const result = await executeQuery('SELECT * FROM fitbit_users WHERE user_id = $1', [userId]);
+
+	if (result.rowCount === 0) {
+		console.log({
+			source: 'pool-select',
+			message: "No user found",
+		});
+		return null;
+	}
+
+	return result.rows[0] as FitBitUserIDData;
+}

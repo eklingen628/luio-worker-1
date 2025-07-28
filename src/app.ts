@@ -2,11 +2,10 @@ import express, { Request, Response } from 'express';
 import path from 'path';
 import { generatePKCE } from './auth';
 import cookieParser from 'cookie-parser';
-import { pool } from './db';
 import cron from 'node-cron';
-import { runDailyJob } from './scheduled';
 import { UserToken } from './types';
 import { insertUserData } from './user';
+
 
 
 
@@ -102,23 +101,21 @@ app.get('/callback', async (req: Request, res: Response) => {
   }
 });
 
-app.get('/db-test', async (req: Request, res: Response) => {
-  try {
-    const result = await pool.query('SELECT NOW()');
-    res.json({ time: result.rows[0].now });
-  } catch (err) {
-    console.error('Database connection error:', err);
-    res.status(500).json({ error: 'Database connection failed' });
-  }
-});
 
-// Schedule to run once per day at 2:00 AM server time
-cron.schedule('0 2 * * *', () => {
-  runDailyJob().catch(err => console.error('Scheduled job error:', err));
-});
 
-// Optionally, run once on server start
-runDailyJob().catch(err => console.error('Initial scheduled job error:', err));
+
+
+// // Schedule to run once per day at 2:00 AM server time
+// cron.schedule('0 2 * * *', async () => {
+//   try {
+//     await runDailyJob();
+//   } catch (err) {
+//     console.error('Scheduled job error:', err);
+//   }
+// });
+
+// // Optionally, run once on server start
+// runDailyJob().catch(err => console.error('Initial scheduled job error:', err));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

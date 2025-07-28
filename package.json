@@ -4,8 +4,9 @@
 	"private": true,
 	"scripts": {
 		"build": "tsc",
-		"start": "dotenvx run -- pm2-runtime start ecosystem.config.js --env production",
-		"dev": "dotenvx run -- ts-node src/app.ts"
+		"start": "dotenvx run -f .env.production -- pm2-runtime start ecosystem.config.js --env production",
+		"dev": "dotenvx run -f .env.local -- ts-node src/app.ts",
+		"cli": "dotenvx run -f .env.local -- ts-node src/cli.ts"
 	},
 	"devDependencies": {
 		"@types/cookie-parser": "^1.4.9",

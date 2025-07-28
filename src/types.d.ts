@@ -1,5 +1,6 @@
-import { Database } from "../database.types";
-
+// ============================================================================
+// USER & AUTHENTICATION TYPES
+// ============================================================================
 
 export type UserToken = {
     access_token: string;
@@ -10,7 +11,21 @@ export type UserToken = {
     user_id: string
 }
 
+export type FitBitUserIDData ={
+    access_token: string;
+    expires_at: string | null;
+    first_added: string;
+    refresh_token: string;
+    scope: string;
+    token_type: string;
+    user_id: string;
+}
 
+// ============================================================================
+// FITBIT API RESPONSE TYPES
+// ============================================================================
+
+// Sleep API Types
 export type SleepApiResponse = {
   sleep: SleepEntry[];
   summary: {
@@ -58,27 +73,7 @@ export type SleepStageSummary = {
   thirtyDayAvgMinutes: number;
 };
 
-
-
-export type FitBitError = {
-  success: boolean;
-  errors: [
-    {
-      errorType: string;
-      message: string;
-    }
-  ]
-}
-
-
-export class APIError extends Error {
-	constructor(message: string, public details?: any) {
-		super(message);
-		this.name = "APIError";
-	}
-}
-
-
+// Heart Rate API Types
 export type HeartApiResponse = {
   "activities-heart": {
     dateTime: string;
@@ -90,9 +85,15 @@ export type HeartApiResponse = {
   }[];
 };
 
+export type HeartRateZone = {
+  name: string;
+  min: number;
+  max: number;
+  minutes: number;
+  caloriesOut: number;
+};
 
-
-
+// Activity API Types
 export type ActivitySummaryResponse = {
   activities: any[]; // or define this if known
   goals: {
@@ -128,26 +129,140 @@ export type ActivitySummaryResponse = {
   };
 };
 
-export type HeartRateZone = {
-  name: string;
-  min: number;
-  max: number;
-  minutes: number;
-  caloriesOut: number;
+// Activity Intraday API Types
+export type ActivityStepsIntradayResponse = {
+  "activities-steps": {
+    dateTime: string;
+    value: string;
+  }[];
+  "activities-steps-intraday": {
+    dataset: {
+      time: string; // "HH:MM:SS" format
+      value: number;
+    }[];
+    datasetInterval: number;
+    datasetType: string;
+  };
 };
 
+// Heart Rate Intraday API Types
+export type HeartRateIntradayResponse = {
+  "activities-heart": {
+    dateTime: string;
+    value: {
+      customHeartRateZones: HeartRateZone[];
+      heartRateZones: HeartRateZone[];
+      restingHeartRate: number;
+    };
+  }[];
+  "activities-heart-intraday": {
+    dataset: {
+      time: string; // "HH:MM:SS" format
+      value: number;
+    }[];
+    datasetInterval: number;
+    datasetType: string;
+  };
+};
 
+// HRV API Types
+export type HrvResponse = {
+  hrv: {
+    value: {
+      dailyRmssd: number;
+      deepRmssd: number;
+    };
+    dateTime: string;
+  }[];
+};
 
-export type FitbitApiResponse = SleepApiResponse | ActivitySummaryResponse | HeartApiResponse;
+// HRV Intraday API Types
+export type HrvIntradayResponse = {
+  hrv: {
+    minutes: {
+      minute: string; // ISO timestamp
+      value: {
+        rmssd: number;
+        coverage: number;
+        hf: number;
+        lf: number;
+      };
+    }[];
+    dateTime: string;
+  }[];
+};
 
-// export type FitBitUserIDData = Database['public']['Tables']['fitbit_users']['Row']
+// Combined API Response Type
+export type FitbitApiResponse = SleepApiResponse | ActivitySummaryResponse | HeartApiResponse | ActivityStepsIntradayResponse | HeartRateIntradayResponse | HrvResponse | HrvIntradayResponse;
 
-export type FitBitUserIDData ={
-    access_token: string;
-    expires_at: string | null;
-    first_added: string;
-    refresh_token: string;
-    scope: string;
-    token_type: string;
-    user_id: string;
+// ============================================================================
+// ERROR HANDLING TYPES
+// ============================================================================
+
+export type FitBitError = {
+  success: boolean;
+  errors: [
+    {
+      errorType: string;
+      message: string;
+    }
+  ]
+}
+
+export type FitBitApiError = {
+  success: false;
+  errors: Array<{
+    errorType: "expired_token" | "invalid_token" | "invalid_grant" | string;
+    message: string;
+  }>;
+}
+
+export class APIError extends Error {
+	constructor(message: string, public details?: any) {
+		super(message);
+		this.name = "APIError";
+	}
+}
+
+// ============================================================================
+// CONFIGURATION TYPES
+// ============================================================================
+
+export type ConfigType = 'getSleep' | 'getActivity' | 'getHeartRateTimeSeriesByDate' | 'getHRV';
+
+// ============================================================================
+// DATABASE TABLE TYPES
+// ============================================================================
+
+// Intraday Data Tables
+export interface ActivityStepsIntraday {
+  user_id: string;
+  date_queried: string; // ISO date string
+  time: string; // "HH:MM:SS" format
+  value: number;
+}
+
+export interface HeartRateIntraday {
+  user_id: string;
+  date_queried: string; // ISO date string
+  time: string; // "HH:MM:SS" format
+  value: number;
+}
+
+// HRV (Heart Rate Variability) Tables
+export interface HrvSummary {
+  user_id: string;
+  date_queried: string; // ISO date string
+  daily_rmssd: number | null;
+  deep_rmssd: number | null;
+}
+
+export interface HrvIntraday {
+  user_id: string;
+  date_queried: string; // ISO date string
+  minute: string; // ISO timestamp string
+  rmssd: number | null;
+  coverage: number | null;
+  hf: number | null;
+  lf: number | null;
 }
