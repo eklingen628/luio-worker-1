@@ -5,27 +5,57 @@ import { FitBitUserIDData } from '../types';
 import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { pool } from '../db/connection';
 
-export async function processEntireUserDataForDate(
+
+
+export async function processUserData(
   userData: FitBitUserIDData, 
-  dateQueried: string
+  dateRange: string[],
+  actionInput: ConfigType | 'all'
 ): Promise<void> {
+
   let currentUserData = userData;
-  
-  for (const action of SCOPE_ACTIONS) {
-    const result = await processUserDataForDateAndAction(currentUserData, dateQueried, action);
-    
-    // If token was refreshed, use the updated user data for subsequent actions
-    if (result?.updatedUserData) {
-      currentUserData = result.updatedUserData;
+
+  if (actionInput === 'all') {
+    for (const action of SCOPE_ACTIONS) {
+      const result = await processUserDataForDateRange(currentUserData, dateRange, action);
+      if (result) {
+        currentUserData = result;
+      }
+    }
+
+  }
+  else {
+    await processUserDataForDateRange(currentUserData, dateRange, actionInput);
+  }
+
+}
+
+
+export async function processUserDataForDateRange(
+  userData: FitBitUserIDData, 
+  dateRange: string[],
+  actionInput: ConfigType
+): Promise<FitBitUserIDData> {
+
+  let currentUserData = userData;
+
+  for (const date of dateRange) {
+    const result = await processUserDataForDateAndAction(currentUserData, date, actionInput);
+    if (result) {
+      currentUserData = result;
     }
   }
+
+  return currentUserData;
 }
+
+
 
 export async function processUserDataForDateAndAction(
   userData: FitBitUserIDData, 
   dateQueried: string,
   action: ConfigType
-): Promise<{ updatedUserData?: FitBitUserIDData } | void> {
+): Promise<FitBitUserIDData | void> {
   try {
     const queriedData = await getData(userData, action, dateQueried);
 
@@ -90,7 +120,7 @@ export async function processUserDataForDateAndAction(
           }
           
           // Return the updated user data so it can be used for subsequent actions
-          return { updatedUserData };
+          return updatedUserData;
           
         } catch (transactionErr) {
           // Rollback transaction on error

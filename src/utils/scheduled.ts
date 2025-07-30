@@ -1,6 +1,6 @@
 import { getAllUserData } from '../data/user';
 import { genDates } from '../utils/date';
-import { processEntireUserDataForDate } from '../workflow/processors';
+import { processUserData } from '../workflow/processors';
 
 
 export async function runDailyJob() {
@@ -22,7 +22,7 @@ export async function runDailyJob() {
     for (const userData of data) {
       const endDate = new Date();
       const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 3);
+      startDate.setDate(startDate.getDate() - 5);
 
       const dates = genDates(startDate.toDateString(), endDate.toISOString());
 
@@ -31,21 +31,12 @@ export async function runDailyJob() {
         continue;
       }
 
-      for (const dateQueried of dates) {
-        await processEntireUserDataForDate(userData, dateQueried);
-      }
+      await processUserData(userData, dates, 'all');
+
+
     }
   } catch (error) {
     console.error('Error in scheduled job:', error);
   }
 }
 
-export async function jobTest() {
-  let data = await getAllUserData();
-
-    if (!data) {
-      console.log('No user data found');
-      return;
-    }
-  console.log(data);
-}

@@ -1,10 +1,8 @@
 // cli.ts
 import { genDates } from './date';
-import { processEntireUserDataForDate, processUserDataForDateAndAction } from '../workflow/processors';
+import { processUserData } from '../workflow/processors';
 import { getOneUserData, getAllUserData } from '../data/user';
-import { ConfigType } from '../handlers/dataHandlers';
-
-  //TODO: add a way to run the job for a specific user and date range and config type 
+import { ConfigType, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 
 async function runOnDemand() {
   const userId = process.argv[2];
@@ -20,10 +18,18 @@ async function runOnDemand() {
     process.exit(1);
   }
 
+  // Validate config type
+  const validConfigs: (ConfigType | 'all')[] = ["all", ...SCOPE_ACTIONS];
+  if (!validConfigs.includes(config)) {
+    console.error(`Invalid config type: ${config}`);
+    console.log('Valid configs:', validConfigs.join(', '));
+    process.exit(1);
+  }
+
   const dates = genDates(startDate, endDate);
 
   if (!dates) {
-    console.log(`No dates generated for user`);
+    console.log(`No dates generated for user ${userId}`);
     return;
   }
 
@@ -36,14 +42,9 @@ async function runOnDemand() {
         return;
       }
       
-      for (const datum of userData) { 
-        for (const dateQueried of dates) {  
-          if (config === 'all') {
-            await processEntireUserDataForDate(datum, dateQueried);
-          } else {
-            await processUserDataForDateAndAction(datum, dateQueried, config as ConfigType);
-          }
-        }
+      for (const datum of userData) {
+        await processUserData(datum, dates, config);
+
       }
     } else {
       // Handle single user
@@ -53,17 +54,14 @@ async function runOnDemand() {
         return;
       }
 
-      for (const dateQueried of dates) {
-        if (config === 'all') {
-          await processEntireUserDataForDate(userData, dateQueried);
-        } else {
-          await processUserDataForDateAndAction(userData, dateQueried, config as ConfigType);
-        }
-      }
+      await processUserData(userData, dates, config);
     }
   } catch (error) {
     console.error('Error:', error);
+    process.exit(1);
   }
+  
+  process.exit(0);
 }
 
 runOnDemand();
