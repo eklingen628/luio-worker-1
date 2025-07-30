@@ -1,15 +1,10 @@
-
+import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "./types";
 import { refreshToken } from "./refresh";
-import { FitbitApiResponse, FitBitUserIDData, FitBitApiError, ConfigType } from "./types";
 import { getOneUserData } from "./user";
+import { ConfigType, DATA_HANDLERS } from "./dataHandlers";
 
 
-const API_ENDPOINTS: Record<ConfigType, (userId: string, date: string) => string> = {
-  getSleep: (userId, date) => `/1.2/user/${userId}/sleep/date/${date}.json`,
-  getActivity: (userId, date) => `/1/user/${userId}/activities/date/${date}.json`,
-  getHeartRateTimeSeriesByDate: (userId, date) => `/1/user/${userId}/activities/heart/date/${date}/1d.json`,
-  getHRV: (userId, date) => `/1/user/${userId}/hrv/date/${date}.json`
-};
+
 
 class TokenExpiredError extends Error {
 	constructor(public fitbitError: FitBitApiError) {
@@ -24,6 +19,9 @@ class FitbitApiCallError extends Error {
 		this.name = "FitbitApiCallError";
 	}
 }
+
+
+
 
 async function makeApiCall(query: string, accessToken: string): Promise<FitbitApiResponse> {
 	const res = await fetch(`https://api.fitbit.com${query}`, {
@@ -57,7 +55,7 @@ Promise<{
 		return null;
 	}
 
-	const query = API_ENDPOINTS[config](data.user_id, dateQueried);
+	const query = DATA_HANDLERS[config].apiCall(data.user_id, dateQueried);
 
 	try {
 		const dataFromQuery = await makeApiCall(query, data.access_token);
@@ -75,6 +73,7 @@ Promise<{
 			// for logging only. delete after testing
 			console.log("Old token:", data.access_token.substring(0, 10) + "...");
 			
+			// Refresh token and insert new token into fitbit_users table
 			await refreshToken(data);
 			
 			// Get the updated user data with the new token
@@ -132,4 +131,3 @@ Promise<{
 		return null;
 	}
 }
-

@@ -1,7 +1,7 @@
-import { pool } from './db';
 import { getAllUserData } from './user';
 import { genDates } from './date';
 import { processEntireUserDataForDate } from './processors';
+
 
 export async function runDailyJob() {
   // TODO: Implement your daily scheduled logic here

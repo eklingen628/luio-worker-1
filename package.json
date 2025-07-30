@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"build": "tsc",
-		"start": "dotenvx run -f .env.production -- pm2-runtime start ecosystem.config.js --env production",
+		"start": "dotenvx run -f .env.local -- pm2 start ecosystem.config.js --env local",
 		"dev": "dotenvx run -f .env.local -- ts-node src/app.ts",
 		"cli": "dotenvx run -f .env.local -- ts-node src/cli.ts"
 	},

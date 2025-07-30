@@ -1,35 +1,8 @@
-import { getData } from './getData';
-import { insertSleepData } from './sleep';
-import { insertActivityData } from './activity';
-import { insertHRTimeSeries, insertHRVData } from './heart';
-import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, ConfigType, FitBitUserIDData, HrvResponse } from './types';
+import { getData } from './fetch';
+import { FitBitUserIDData } from './types.d';
+import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from './dataHandlers';
 
-type DataHandler<T> = {
-  check: (data: any) => data is T;
-  insert: (data: T, date: string, userId: string) => Promise<any>;
-};
 
-const DATA_HANDLERS: Record<ConfigType, DataHandler<any>> = {
-  getSleep: {
-    check: (data): data is SleepApiResponse => 'sleep' in data,
-    insert: (data, date, userId) => insertSleepData(data, date, userId)
-  },
-  getActivity: {
-    check: (data): data is ActivitySummaryResponse => 'activities' in data,
-    insert: (data, date, userId) => insertActivityData(data, date, userId)
-  },
-  getHeartRateTimeSeriesByDate: {
-    check: (data): data is HeartApiResponse => 'activities-heart' in data,
-    insert: async (data, date, userId) => insertHRTimeSeries(data, date, userId)
-  },
-  getHRV: {
-    check: (data): data is HrvResponse => 'hrv' in data,
-    insert: (data, date, userId) => insertHRVData(data, date, userId)
-  }
-};
-
-// Dynamically extract all ConfigType values from DATA_HANDLERS
-const SCOPE_ACTIONS: ConfigType[] = Object.keys(DATA_HANDLERS) as ConfigType[];
 
 export async function processEntireUserDataForDate(
   userData: FitBitUserIDData, 

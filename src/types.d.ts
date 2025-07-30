@@ -224,11 +224,7 @@ export class APIError extends Error {
 	}
 }
 
-// ============================================================================
-// CONFIGURATION TYPES
-// ============================================================================
 
-export type ConfigType = 'getSleep' | 'getActivity' | 'getHeartRateTimeSeriesByDate' | 'getHRV';
 
 // ============================================================================
 // DATABASE TABLE TYPES

@@ -1,6 +1,5 @@
-
-import { executeQuery } from './db';
-import { SleepApiResponse } from './types';
+import { executeQuery } from './connection';
+import { SleepApiResponse } from './types';  
 
 export async function insertSleepData(
   data: SleepApiResponse,

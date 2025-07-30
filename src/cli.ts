@@ -2,7 +2,7 @@
 import { genDates } from './date';
 import { processEntireUserDataForDate, processUserDataForDateAndAction } from './processors';
 import { getOneUserData, getAllUserData } from './user';
-import { ConfigType } from './types';
+import { ConfigType } from './dataHandlers';
 
   //TODO: add a way to run the job for a specific user and date range and config type 
 

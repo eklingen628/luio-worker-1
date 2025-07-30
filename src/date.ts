@@ -42,8 +42,8 @@ export function genDates(startDate: string, endDate?: string): string[] | null {
 	} else if (diff < 1) {
 		console.log('Error, inputted dates must be at least 1 day apart. Exiting.');
 		return null;
-	} else if (diff > 14) {
-		console.log('Error, cannot support more than 14 days of range. Exiting.');
+	} else if (diff > 31) {
+		console.log('Error, cannot support more than 31 days of range. Exiting.');
 		return null;
 	} else {
 		days.push(getQueryDate(sd));

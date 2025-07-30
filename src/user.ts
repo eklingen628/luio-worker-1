@@ -1,4 +1,4 @@
-import { executeQuery } from './db';
+import { executeQuery } from './connection';
 import { UserToken } from './types';
 import { FitBitUserIDData } from './types';
 
