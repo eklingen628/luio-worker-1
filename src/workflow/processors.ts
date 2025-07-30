@@ -1,6 +1,6 @@
-import { getData } from './fetch';
-import { FitBitUserIDData } from './types.d';
-import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from './dataHandlers';
+import { getData } from '../api/fetch';
+import { FitBitUserIDData } from '../types';
+import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 
 
 

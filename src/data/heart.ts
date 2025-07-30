@@ -1,5 +1,5 @@
-import { executeQuery } from './connection';
-import { HeartRateZone, HeartApiResponse, HrvResponse } from './types';
+import { executeQuery } from '../db/connection';
+import { HeartRateZone, HeartApiResponse, HrvResponse } from '../types';
 
 export async function insertHRTimeSeries(
 	data: HeartApiResponse,

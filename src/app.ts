@@ -1,13 +1,13 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { generatePKCE } from './auth';
+import { generatePKCE } from './utils/auth';
 import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
-import { insertUserData } from './user';
+import { insertUserData } from './data/user';
 
 
-
+  
 
 const app = express();
 const PORT = process.env.PORT || 3000;

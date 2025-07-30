@@ -1,6 +1,5 @@
-import { UserToken } from "./types";
-import { insertUserData } from "./user";
-import { FitBitUserIDData } from "./types";
+import { UserToken, FitBitUserIDData } from "../types";
+import { insertUserData } from "../data/user";
 
 export async function refreshToken(userData: FitBitUserIDData): Promise<boolean> {
   const tokenURL = new URL("https://api.fitbit.com/oauth2/token");

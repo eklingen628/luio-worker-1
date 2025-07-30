@@ -1,8 +1,8 @@
 // cli.ts
 import { genDates } from './date';
-import { processEntireUserDataForDate, processUserDataForDateAndAction } from './processors';
-import { getOneUserData, getAllUserData } from './user';
-import { ConfigType } from './dataHandlers';
+import { processEntireUserDataForDate, processUserDataForDateAndAction } from '../workflow/processors';
+import { getOneUserData, getAllUserData } from '../data/user';
+import { ConfigType } from '../handlers/dataHandlers';
 
   //TODO: add a way to run the job for a specific user and date range and config type 
 

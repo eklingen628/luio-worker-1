@@ -1,4 +1,4 @@
-import { executeQuery } from "./connection";
+import { executeQuery } from "../db/connection";
 
 export async function insertActivityData(
 	data: any,

@@ -1,7 +1,7 @@
-import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "./types";
+import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "../types";
 import { refreshToken } from "./refresh";
-import { getOneUserData } from "./user";
-import { ConfigType, DATA_HANDLERS } from "./dataHandlers";
+import { getOneUserData } from "../data/user";
+import { ConfigType, DATA_HANDLERS } from "../handlers/dataHandlers";
 
 
 

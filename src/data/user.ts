@@ -1,6 +1,5 @@
-import { executeQuery } from './connection';
-import { UserToken } from './types';
-import { FitBitUserIDData } from './types';
+import { executeQuery } from '../db/connection';
+import { UserToken, FitBitUserIDData } from '../types';
 
 export async function insertUserData(data: UserToken): Promise<Response | null> {
 

@@ -1,6 +1,6 @@
-import { getAllUserData } from './user';
-import { genDates } from './date';
-import { processEntireUserDataForDate } from './processors';
+import { getAllUserData } from '../data/user';
+import { genDates } from '../utils/date';
+import { processEntireUserDataForDate } from '../workflow/processors';
 
 
 export async function runDailyJob() {

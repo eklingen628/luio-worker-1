@@ -1,4 +1,4 @@
-import { FitBitUserIDData } from "./types";
+import { FitBitUserIDData } from "../types";
 
 export function validateScope(userData: FitBitUserIDData) {
 

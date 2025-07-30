@@ -1,7 +1,7 @@
-import { insertSleepData } from './sleep';
-import { insertActivityData } from './activity';
-import { insertHRTimeSeries, insertHRVData } from './heart';
-import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse } from './types';
+import { insertSleepData } from '../data/sleep';
+import { insertActivityData } from '../data/activity';
+import { insertHRTimeSeries, insertHRVData } from '../data/heart';
+import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse } from '../types';
 
 // Define ConfigType locally since it's not being imported correctly
 export type ConfigType = 'getSleep' | 'getActivity' | 'getHeartRateTimeSeriesByDate' | 'getHRV';
