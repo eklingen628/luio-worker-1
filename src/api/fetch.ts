@@ -1,11 +1,5 @@
 import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "../types";
-import { refreshToken } from "./refresh";
-import { getOneUserData, insertUserDataWithClient, getOneUserDataWithClient } from "../data/user";
 import { ConfigType, DATA_HANDLERS } from "../handlers/dataHandlers";
-import { pool } from "../db/connection";
-
-
-
 
 class TokenExpiredError extends Error {
 	constructor(public fitbitError: FitBitApiError) {
@@ -20,9 +14,6 @@ class FitbitApiCallError extends Error {
 		this.name = "FitbitApiCallError";
 	}
 }
-
-
-
 
 async function makeApiCall(query: string, accessToken: string): Promise<FitbitApiResponse> {
 	const res = await fetch(`https://api.fitbit.com${query}`, {
@@ -66,63 +57,9 @@ Promise<{
 		};
 	}
 	catch (err) {
-		// Handle expired token specifically
+		// Re-throw TokenExpiredError so processor can handle it
 		if (err instanceof TokenExpiredError) {
-			console.log("Token expired, refreshing and retrying...");
-
-
-			
-			// Refresh token to get new token data
-			const refreshedTokenData = await refreshToken(data);
-			
-			// Start a new database client for transaction
-			const client = await pool.connect()
-			
-			try {
-				// Begin transaction
-				await client.query('BEGIN');
-				
-				// Insert the refreshed token data
-				await insertUserDataWithClient(client, refreshedTokenData);
-				
-				// Get the updated user data with the new token
-				const updatedUserData = await getOneUserDataWithClient(client, data.user_id);
-				
-				// Commit the transaction
-				await client.query('COMMIT');
-				
-				if (!updatedUserData) {
-					console.log("Failed to get updated user data after token refresh");
-					return null;
-				}
-
-
-				
-				try {
-					const dataFromQuery = await makeApiCall(query, updatedUserData.access_token);
-					return {
-						dateQueried,
-						dataFromQuery
-					};
-				} catch (retryErr) {
-					// for logging only. delete after testing
-					console.log("Retry failed with new token. Error:", retryErr);
-					console.log(JSON.stringify({
-						source: "getData: retry failed",
-						errorType: retryErr instanceof TokenExpiredError ? "token_expired" : "api_error",
-						message: (retryErr as Error).message,
-					}));
-					return null;
-				}
-			} catch (transactionErr) {
-				// Rollback transaction on error
-				await client.query('ROLLBACK');
-				console.error("Transaction failed during token refresh:", transactionErr);
-				return null;
-			} finally {
-				// Always release the client
-				client.release();
-			}
+			throw err;
 		}
 
 		// Handle other Fitbit API errors
@@ -145,3 +82,6 @@ Promise<{
 		return null;
 	}
 }
+
+// Export TokenExpiredError so processor can catch it
+export { TokenExpiredError };
