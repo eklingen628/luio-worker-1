@@ -1,7 +1,6 @@
 import { UserToken, FitBitUserIDData } from "../types";
-import { insertUserData } from "../data/user";
 
-export async function refreshToken(userData: FitBitUserIDData): Promise<boolean> {
+export async function refreshToken(userData: FitBitUserIDData): Promise<UserToken> {
   const tokenURL = new URL("https://api.fitbit.com/oauth2/token");
 
   const body = new URLSearchParams();
@@ -29,22 +28,12 @@ export async function refreshToken(userData: FitBitUserIDData): Promise<boolean>
 
     const refresh = await res.json() as UserToken;
     
-    // Save the refreshed token to database
-    await insertUserData(refresh);
-    
     console.log("Token refreshed successfully for user:", refresh.user_id);
-    return true;
+    return refresh;
 
   } catch (err: any) {
     console.error("Token refresh error:", err);
-    
-    // Check if it's a database error vs API error
-    if (err.code) {
-      console.error("Database error during token refresh:", err);
-      throw new Error("Failed to save refreshed token to database");
-    } else {
-      throw new Error("Failed to refresh token from Fitbit API");
-    }
+    throw new Error("Failed to refresh token from Fitbit API");
   }
 }
 

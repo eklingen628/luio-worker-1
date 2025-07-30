@@ -1,7 +1,8 @@
 import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "../types";
 import { refreshToken } from "./refresh";
-import { getOneUserData } from "../data/user";
+import { getOneUserData, insertUserDataWithClient, getOneUserDataWithClient } from "../data/user";
 import { ConfigType, DATA_HANDLERS } from "../handlers/dataHandlers";
+import { pool } from "../db/connection";
 
 
 
@@ -70,44 +71,57 @@ Promise<{
 			console.log("Token expired, refreshing and retrying...");
 
 
-			// for logging only. delete after testing
-			console.log("Old token:", data.access_token.substring(0, 10) + "...");
 			
-			// Refresh token and insert new token into fitbit_users table
-			await refreshToken(data);
+			// Refresh token to get new token data
+			const refreshedTokenData = await refreshToken(data);
 			
-			// Get the updated user data with the new token
-			const updatedUserData = await getOneUserData(data.user_id);
-			if (!updatedUserData) {
-				console.log("Failed to get updated user data after token refresh");
-				return null;
-			}
-			
-
-
-
-			// for logging only. delete after testing	
-			console.log("New token:", updatedUserData.access_token.substring(0, 10) + "...");
+			// Start a new database client for transaction
+			const client = await pool.connect()
 			
 			try {
-				const dataFromQuery = await makeApiCall(query, updatedUserData.access_token);
-				return {
-					dateQueried,
-					dataFromQuery
-				};
-			} catch (retryErr) {
+				// Begin transaction
+				await client.query('BEGIN');
+				
+				// Insert the refreshed token data
+				await insertUserDataWithClient(client, refreshedTokenData);
+				
+				// Get the updated user data with the new token
+				const updatedUserData = await getOneUserDataWithClient(client, data.user_id);
+				
+				// Commit the transaction
+				await client.query('COMMIT');
+				
+				if (!updatedUserData) {
+					console.log("Failed to get updated user data after token refresh");
+					return null;
+				}
 
 
-
-
-				// for logging only. delete after testing
-				console.log("Retry failed with new token. Error:", retryErr);
-				console.log(JSON.stringify({
-					source: "getData: retry failed",
-					errorType: retryErr instanceof TokenExpiredError ? "token_expired" : "api_error",
-					message: (retryErr as Error).message,
-				}));
+				
+				try {
+					const dataFromQuery = await makeApiCall(query, updatedUserData.access_token);
+					return {
+						dateQueried,
+						dataFromQuery
+					};
+				} catch (retryErr) {
+					// for logging only. delete after testing
+					console.log("Retry failed with new token. Error:", retryErr);
+					console.log(JSON.stringify({
+						source: "getData: retry failed",
+						errorType: retryErr instanceof TokenExpiredError ? "token_expired" : "api_error",
+						message: (retryErr as Error).message,
+					}));
+					return null;
+				}
+			} catch (transactionErr) {
+				// Rollback transaction on error
+				await client.query('ROLLBACK');
+				console.error("Transaction failed during token refresh:", transactionErr);
 				return null;
+			} finally {
+				// Always release the client
+				client.release();
 			}
 		}
 
