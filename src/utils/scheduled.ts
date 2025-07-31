@@ -18,23 +18,21 @@ export async function runJob() {
       return;
     }
 
+    const endDate = new Date();
+    const startDate = new Date(endDate);
+    //set the start date to 3 days ago
+    startDate.setDate(startDate.getDate() - 3);
+
+    const dates = genDates(startDate.toDateString(), endDate.toISOString());
+
+    if (!dates) {
+      console.log(`Error in generating dates startdate: ${startDate.toISOString()} enddate: ${endDate.toISOString()}`);
+      return;
+    }
+
     // Process data for each user
     for (const userData of data) {
-      const endDate = new Date();
-      const startDate = new Date(endDate);
-      //set the start date to 3 days ago
-      startDate.setDate(startDate.getDate() - 3);
-
-      const dates = genDates(startDate.toDateString(), endDate.toISOString());
-
-      if (!dates) {
-        console.log(`No dates generated for user ${userData.user_id}`);
-        continue;
-      }
-
       await processUserData(userData, dates, 'all');
-
-
     }
   } catch (error) {
     throw error;
