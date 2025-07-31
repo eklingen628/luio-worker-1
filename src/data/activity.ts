@@ -1,4 +1,5 @@
 import { executeQuery } from "../db/connection";
+import { ActivityStepsIntradayResponse } from "../types";
 
 export async function insertActivityData(
 	data: any,
@@ -118,5 +119,33 @@ export async function insertActivityData(
 			stack: (err as Error).stack,
 		});
 		return new Response("Unexpected error inserting activity data", { status: 500 });
+	}
+}
+
+export async function insertStepsIntraday(
+	data: ActivityStepsIntradayResponse,
+	dateQueried: string,
+	user_id: string
+): Promise<Response | null> {
+	try {
+		const entries = data['activities-steps-intraday']['dataset'];
+		for (const entry of entries) {
+			const { time, value } = entry;
+			await executeQuery(`
+				INSERT INTO activity_steps_intraday (user_id, date_queried, time, value) 
+				VALUES ($1, $2, $3, $4) 
+				ON CONFLICT (user_id, date_queried, time) 
+				DO UPDATE SET value = EXCLUDED.value
+				`, [user_id, dateQueried, time, value]
+			);
+		}
+		return null;
+	} catch (err) {
+		console.log({
+			source: 'insertStepsIntraday',
+			message: (err as Error).message,
+			stack: (err as Error).stack,
+		});
+		return new Response('Unexpected error inserting steps intraday data', { status: 500 });
 	}
 }

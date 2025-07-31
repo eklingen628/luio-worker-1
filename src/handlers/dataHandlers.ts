@@ -1,7 +1,7 @@
 import { insertSleepData } from '../data/sleep';
-import { insertActivityData } from '../data/activity';
-import { insertHRTimeSeries, insertHRVData } from '../data/heart';
-import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse } from '../types';
+import { insertActivityData, insertStepsIntraday } from '../data/activity';
+import { insertHRTimeSeries, insertHRVData, insertHeartIntraday, insertHRVIntraday } from '../data/heart';
+import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse, HeartRateIntradayResponse, HrvIntradayResponse, ActivityStepsIntradayResponse } from '../types';
 
 // Define DATA_HANDLERS first, then derive everything from it
 const DATA_HANDLERS_IMPL = {
@@ -15,7 +15,7 @@ const DATA_HANDLERS_IMPL = {
     insert: (data: ActivitySummaryResponse, date: string, userId: string) => insertActivityData(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/date/${date}.json`
   },
-  getHeartRateTimeSeriesByDate: {
+  getHRSummary: {
     check: (data: any): data is HeartApiResponse => 'activities-heart' in data,
     insert: async (data: HeartApiResponse, date: string, userId: string) => insertHRTimeSeries(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/heart/date/${date}/1d.json`
@@ -24,6 +24,23 @@ const DATA_HANDLERS_IMPL = {
     check: (data: any): data is HrvResponse => 'hrv' in data,
     insert: (data: HrvResponse, date: string, userId: string) => insertHRVData(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/hrv/date/${date}.json`
+  },
+  getHRIntraday: {
+    check: (data: any): data is HeartRateIntradayResponse => 'activities-heart-intraday' in data,
+    insert: (data: HeartRateIntradayResponse, date: string, userId: string) => insertHeartIntraday(data, date, userId),
+    // 1sec | 1min | 5min | 15min. Currently set to 5min.
+    apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/heart/date/${date}/1d/5min.json`  
+  },
+  getHRVIntraday: {
+    check: (data: any): data is HrvIntradayResponse => 'hrv' in data && 'minutes' in data['hrv'][0],
+    insert: (data: HrvIntradayResponse, date: string, userId: string) => insertHRVIntraday(data, date, userId),
+    apiCall: (userId: string, date: string) => `/1/user/${userId}/hrv/date/${date}/all.json`
+  },
+  getStepsIntraday: {
+    check: (data: any): data is ActivityStepsIntradayResponse => 'activities-steps-intraday' in data,
+    insert: (data: ActivityStepsIntradayResponse, date: string, userId: string) => insertStepsIntraday(data, date, userId),
+    //Detail level: 1sec | 1min | 5min | 15min. Currently set to 5min. Resource: Supported: calories | distance | elevation | floors | steps | swimming-strokes
+    apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/[resource]/date/${date}/1d/5min.json`
   }
 } as const;
 

@@ -1,5 +1,5 @@
 import { executeQuery } from '../db/connection';
-import { HeartRateZone, HeartApiResponse, HrvResponse } from '../types';
+import { HeartRateZone, HeartApiResponse, HrvResponse, HeartRateIntradayResponse, HrvIntradayResponse } from '../types';
 
 export async function insertHRTimeSeries(
 	data: HeartApiResponse,
@@ -102,5 +102,68 @@ export async function insertHRVData(
 			stack: (err as Error).stack,
 		});
 		return new Response('Unexpected error inserting HRV data', { status: 500 });
+	}
+}
+
+
+
+export async function insertHeartIntraday(
+	data: HeartRateIntradayResponse,
+	dateQueried: string,
+	user_id: string
+): Promise<Response | null> {
+	try {
+		const entries = data['activities-heart-intraday']['dataset'];
+		for (const entry of entries) {
+			const { time, value } = entry;
+			await executeQuery(
+				`INSERT INTO heart_rate_intraday (user_id, date_queried, time, value) 
+				VALUES ($1, $2, $3, $4) 
+				ON CONFLICT (user_id, date_queried, time) 
+				DO UPDATE SET value = EXCLUDED.value`,
+				[user_id, dateQueried, time, value]
+			);
+		}
+		return null;
+	} catch (err) {
+		console.log({
+			source: 'insertHeartIntraday',
+			message: (err as Error).message,
+			stack: (err as Error).stack,
+		});
+		return new Response('Unexpected error inserting heart intraday data', { status: 500 });
+	}
+}
+
+
+export async function insertHRVIntraday(
+	data: HrvIntradayResponse,
+	dateQueried: string,
+	user_id: string
+): Promise<Response | null> {
+	try {
+		const entries = data['hrv'][0]['minutes'];
+		for (const entry of entries) {
+			const { minute, value } = entry;
+			await executeQuery(
+				`INSERT INTO hrv_intraday (user_id, date_queried, minute, rmssd, coverage, hf, lf)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
+				ON CONFLICT (user_id, date_queried, minute)
+				DO UPDATE SET 
+					rmssd = EXCLUDED.rmssd,
+					coverage = EXCLUDED.coverage,
+					hf = EXCLUDED.hf,
+					lf = EXCLUDED.lf`,
+				[user_id, dateQueried, minute, value.rmssd, value.coverage, value.hf, value.lf]
+			);
+		}
+		return null;
+	} catch (err) {
+		console.log({
+			source: 'insertHRVIntraday',
+			message: (err as Error).message,
+			stack: (err as Error).stack,
+		});
+		return new Response('Unexpected error inserting HRV intraday data', { status: 500 });
 	}
 }
