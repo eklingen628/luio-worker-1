@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
-
+import { runJob } from './utils/scheduled';
 
   
 
@@ -104,18 +104,17 @@ app.get('/callback', async (req: Request, res: Response) => {
 
 
 
+// Schedule to run once per day at 2:00 AM server time
+cron.schedule('0 2 * * *', async () => {
+  try {
+    await runJob();
+  } catch (err) {
+    console.error('Scheduled job error:', err);
+  }
+});
 
-// // Schedule to run once per day at 2:00 AM server time
-// cron.schedule('0 2 * * *', async () => {
-//   try {
-//     await runDailyJob();
-//   } catch (err) {
-//     console.error('Scheduled job error:', err);
-//   }
-// });
 
-// // Optionally, run once on server start
-// runDailyJob().catch(err => console.error('Initial scheduled job error:', err));
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -3,7 +3,7 @@ import { genDates } from '../utils/date';
 import { processUserData } from '../workflow/processors';
 
 
-export async function runDailyJob() {
+export async function runJob() {
   // TODO: Implement your daily scheduled logic here
   // Example: Query users, refresh tokens, fetch/insert data, etc.
   console.log('Running daily scheduled job...');
@@ -22,7 +22,8 @@ export async function runDailyJob() {
     for (const userData of data) {
       const endDate = new Date();
       const startDate = new Date(endDate);
-      startDate.setDate(startDate.getDate() - 5);
+      //set the start date to 3 days ago
+      startDate.setDate(startDate.getDate() - 3);
 
       const dates = genDates(startDate.toDateString(), endDate.toISOString());
 
@@ -36,7 +37,7 @@ export async function runDailyJob() {
 
     }
   } catch (error) {
-    console.error('Error in scheduled job:', error);
+    throw error;
   }
 }
 
