@@ -32,7 +32,7 @@ const DATA_HANDLERS_IMPL = {
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/heart/date/${date}/1d/5min.json`  
   },
   getHRVIntraday: {
-    check: (data: any): data is HrvIntradayResponse => 'hrv' in data && 'minutes' in data['hrv'][0],
+    check: (data: any): data is HrvIntradayResponse => 'hrv' in data && data['hrv'] && data['hrv'].length > 0 && 'minutes' in data['hrv'][0],
     insert: (data: HrvIntradayResponse, date: string, userId: string) => insertHRVIntraday(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/hrv/date/${date}/all.json`
   },

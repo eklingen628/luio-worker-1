@@ -15,6 +15,7 @@ async function runOnDemand() {
     console.log('Example: npm run cli 12345 getSleep 01-15-2025');
     console.log('Example: npm run cli 12345 getSleep 01-15-2025 01-20-2025');
     console.log('Example: npm run cli all all 01-15-2025 01-20-2025');
+    console.log('Valid Configs: ', SCOPE_ACTIONS.join(', '));
     process.exit(1);
   }
 
