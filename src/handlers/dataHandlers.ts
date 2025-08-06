@@ -40,7 +40,7 @@ const DATA_HANDLERS_IMPL = {
     check: (data: any): data is ActivityStepsIntradayResponse => 'activities-steps-intraday' in data,
     insert: (data: ActivityStepsIntradayResponse, date: string, userId: string) => insertStepsIntraday(data, date, userId),
     //Detail level: 1sec | 1min | 5min | 15min. Currently set to 5min. Resource: Supported: calories | distance | elevation | floors | steps | swimming-strokes
-    apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/[resource]/date/${date}/1d/5min.json`
+    apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/steps/date/${date}/1d/5min.json`
   }
 } as const;
 
