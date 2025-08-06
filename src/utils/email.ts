@@ -65,7 +65,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const parentDir = path.join('C:','Users','kling','Downloads');
+const parentDir = process.env.DATA_DUMP_DIR!;
 
 
 
