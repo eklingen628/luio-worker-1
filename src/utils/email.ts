@@ -43,7 +43,7 @@ export const dataDump: EmailOptions = {
     to: process.env.EMAIL_USER ?? '',
     from: process.env.EMAIL_USER ?? '',
     subject: `AUTOMATED EMAIL -- DATA DUMP ${getDateString(new Date())}`,
-    text: `Data dump for the day.`,
+    text: `Data dump.`,
     attachments: []
 }
 
@@ -73,14 +73,15 @@ const parentDir = process.env.DATA_DUMP_DIR!;
 export async function getFileDump() {
 
     try {
-        const currentDir = path.join(parentDir,`dump_${getDateString(new Date())}`);
+        const currentDir = path.join(parentDir,`dump_${getDateString(new Date())}.zip`);
         //check if the directory exists
         if (!fs.existsSync(currentDir)) {
             console.log('No file dump found for directory: ', currentDir);
             throw new Error('No file dump found for directory: ' + currentDir);
         }
-        const fullFilePaths = fs.readdirSync(currentDir).map(file => path.join(currentDir, file));
-        return fullFilePaths;
+        // const fullFilePaths = fs.readdirSync(currentDir).map(file => path.join(currentDir, file));
+        // return fullFilePaths;
+        return [currentDir];
     } catch (error) {
         throw error;
     }
