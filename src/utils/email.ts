@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { getDateString } from './date';
 
-console.log("START OF EMAIL.TS")
+
 
 type EmailOptions = {
     from: string;
@@ -71,7 +71,6 @@ const parentDir = process.env.DATA_DUMP_DIR!;
 
 
 export async function getFileDump() {
-    console.trace('getFileDump called');
 
     try {
         const currentDir = path.join(parentDir,`dump_${getDateString(new Date())}`);
