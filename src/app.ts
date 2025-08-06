@@ -5,7 +5,8 @@ import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
-import { runJob } from './utils/scheduled';
+import { runImport } from './utils/scheduled';
+import { dataDump, sendEmail } from './utils/email';
 
   
 
@@ -105,9 +106,18 @@ app.get('/callback', async (req: Request, res: Response) => {
 
 
 // Schedule to run once per day at 2:00 AM server time
-cron.schedule('0 2 * * *', async () => {
+cron.schedule(process.env.CRON_IMPORT!, async () => {
   try {
-    await runJob();
+    await runImport();
+  } catch (err) {
+    console.error('Scheduled job error:', err);
+  }
+});
+
+
+cron.schedule(process.env.CRON_DATA_DUMP!, async () => {
+  try {
+    await sendEmail(dataDump);
   } catch (err) {
     console.error('Scheduled job error:', err);
   }

@@ -1,9 +1,11 @@
 import { getAllUserData } from '../data/user';
 import { genDates } from '../utils/date';
 import { processUserData } from '../workflow/processors';
+import { sendEmail, scopeEmail } from './email';
+import { validateScope } from './scope';
+ 
 
-
-export async function runJob() {
+export async function runImport() {
   // TODO: Implement your daily scheduled logic here
   // Example: Query users, refresh tokens, fetch/insert data, etc.
   console.log('Running daily scheduled job...');
@@ -32,10 +34,21 @@ export async function runJob() {
 
     // Process data for each user
     for (const userData of data) {
+      const scopeResults = validateScope(userData);
+
+      if (!scopeResults.allScopesPresent) {
+        console.log(`User ${userData.user_id} has missing scopes: ${scopeResults.missingScopes.join(', ')}. Email was sent.`);
+        const sentMessageInfo = await sendEmail(scopeEmail);
+        console.log(`Sent message info: ${sentMessageInfo}`);
+        continue;
+      }
+      
       await processUserData(userData, dates, 'all');
     }
   } catch (error) {
     throw error;
   }
 }
+
+
 
