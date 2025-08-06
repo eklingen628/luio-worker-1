@@ -1,6 +1,6 @@
 import { getData, TokenExpiredError } from '../api/fetch';
 import { refreshToken } from '../api/refresh';
-import { getOneUserData, insertUserDataWithClient, getOneUserDataWithClient } from '../data/user';
+import { getOneUserData, insertUserData } from '../data/user';
 import { FitBitUserIDData } from '../types';
 import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { pool } from '../db/connection';
@@ -89,10 +89,10 @@ export async function processUserDataForDateAndAction(
           await client.query('BEGIN');
           
           // Insert the refreshed token data
-          await insertUserDataWithClient(client, refreshedTokenData);
+          await insertUserData(refreshedTokenData, client);
           
           // Get the updated user data with the new token
-          const updatedUserData = await getOneUserDataWithClient(client, refreshedTokenData.user_id);
+          const updatedUserData = await getOneUserData(refreshedTokenData.user_id, client);
           
           // Commit the transaction
           await client.query('COMMIT');
