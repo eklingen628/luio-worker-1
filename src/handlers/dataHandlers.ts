@@ -43,7 +43,7 @@ const DATA_HANDLERS_IMPL = {
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/steps/date/${date}/1d/5min.json`
   },
   getActivityLogList: {
-    check: (data: any): data is ActivityLogListResponse => 'activities-log-list' in data,
+    check: (data: any): data is ActivityLogListResponse => 'pagination' in data && 'activities' in data,
     insert: (data: ActivityLogListResponse, date: string, userId: string) => insertActivityLogList(data, date, userId),
     apiCall: (userId: string, date: string) =>  `/1/user/${userId}/activities/list.json?beforeDate=${date}&sort=desc&limit=100&offset=0`
   }
