@@ -7,44 +7,44 @@ import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvRespons
 const DATA_HANDLERS_IMPL = {
   getSleep: {
     check: (data: any): data is SleepApiResponse => 'sleep' in data,
-    insert: (data: SleepApiResponse, date: string, userId: string) => insertSleepData(data, date, userId),
+    insert: (data: SleepApiResponse, date: string, userId: string, firstAdded?: string) => insertSleepData(data, date, userId),
     apiCall: (userId: string, date: string) => `/1.2/user/${userId}/sleep/date/${date}.json`
   },
   getActivity: {
     check: (data: any): data is ActivitySummaryResponse => 'activities' in data,
-    insert: (data: ActivitySummaryResponse, date: string, userId: string) => insertActivityData(data, date, userId),
+    insert: (data: ActivitySummaryResponse, date: string, userId: string, firstAdded?: string) => insertActivityData(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/date/${date}.json`
   },
   getHRSummary: {
     check: (data: any): data is HeartApiResponse => 'activities-heart' in data,
-    insert: async (data: HeartApiResponse, date: string, userId: string) => insertHRTimeSeries(data, date, userId),
+    insert: async (data: HeartApiResponse, date: string, userId: string, firstAdded?: string) => insertHRTimeSeries(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/heart/date/${date}/1d.json`
   },
   getHRV: {
     check: (data: any): data is HrvResponse => 'hrv' in data,
-    insert: (data: HrvResponse, date: string, userId: string) => insertHRVData(data, date, userId),
+    insert: (data: HrvResponse, date: string, userId: string, firstAdded?: string) => insertHRVData(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/hrv/date/${date}.json`
   },
   getHRIntraday: {
     check: (data: any): data is HeartRateIntradayResponse => 'activities-heart-intraday' in data,
-    insert: (data: HeartRateIntradayResponse, date: string, userId: string) => insertHeartIntraday(data, date, userId),
+    insert: (data: HeartRateIntradayResponse, date: string, userId: string, firstAdded?: string) => insertHeartIntraday(data, date, userId),
     // 1sec | 1min | 5min | 15min. Currently set to 5min.
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/heart/date/${date}/1d/5min.json`  
   },
   getHRVIntraday: {
     check: (data: any): data is HrvIntradayResponse => 'hrv' in data && data['hrv'] && data['hrv'].length > 0 && 'minutes' in data['hrv'][0],
-    insert: (data: HrvIntradayResponse, date: string, userId: string) => insertHRVIntraday(data, date, userId),
+    insert: (data: HrvIntradayResponse, date: string, userId: string, firstAdded?: string) => insertHRVIntraday(data, date, userId),
     apiCall: (userId: string, date: string) => `/1/user/${userId}/hrv/date/${date}/all.json`
   },
   getStepsIntraday: {
     check: (data: any): data is ActivityStepsIntradayResponse => 'activities-steps-intraday' in data,
-    insert: (data: ActivityStepsIntradayResponse, date: string, userId: string) => insertStepsIntraday(data, date, userId),
+    insert: (data: ActivityStepsIntradayResponse, date: string, userId: string, firstAdded?: string) => insertStepsIntraday(data, date, userId),
     //Detail level: 1sec | 1min | 5min | 15min. Currently set to 5min. Resource: Supported: calories | distance | elevation | floors | steps | swimming-strokes
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/steps/date/${date}/1d/5min.json`
   },
   getActivityLogList: {
     check: (data: any): data is ActivityLogListResponse => 'pagination' in data && 'activities' in data,
-    insert: (data: ActivityLogListResponse, date: string, userId: string) => insertActivityLogList(data, date, userId),
+    insert: (data: ActivityLogListResponse, date: string, userId: string, firstAdded?: string) => insertActivityLogList(data, date, userId, firstAdded),
     apiCall: (userId: string, date: string) =>  `/1/user/${userId}/activities/list.json?beforeDate=${date}&sort=desc&limit=100&offset=0`
   }
 } as const;
@@ -56,7 +56,7 @@ export type ConfigType = keyof typeof DATA_HANDLERS_IMPL;
 
 export type DataHandler<T> = {
   check: (data: any) => data is T;
-  insert: (data: T, date: string, userId: string) => Promise<any>;
+  insert: (data: T, date: string, userId: string, firstAdded?: string) => Promise<any>;
   apiCall: (userId: string, date: string) => string;
 };
 

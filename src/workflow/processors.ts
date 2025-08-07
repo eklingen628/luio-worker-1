@@ -68,7 +68,7 @@ export async function processUserDataForDateAndAction(
     
     const handler = DATA_HANDLERS[action];
     if (handler && handler.check(queriedData.dataFromQuery)) {
-      await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id);
+      await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id, userData.first_added);
     } else {
       console.log(`Type mismatch for ${action} data - expected data type not found`);
     }
