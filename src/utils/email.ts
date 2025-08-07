@@ -102,6 +102,8 @@ export async function sendEmail(emailOptions: EmailOptions) {
     try {
         // Handle data dump emails with file attachments
         if (emailOptions.subject.includes("AUTOMATED EMAIL -- DATA DUMP") && !emailOptions.subject.includes("ERROR")) {
+
+            console.log(new Date().toISOString(), 'Sending data dump email');
             try {
                 const files = await getFileDump();
                 emailOptions.attachments = files.map(file => ({

@@ -129,6 +129,47 @@ export type ActivitySummaryResponse = {
   };
 };
 
+export type ActivityLogListResponse = {
+  activities: ActivityLog[];
+  pagination: {
+    afterDate: string;
+    limit: number;
+    next: string;
+    offset: number;
+    previous: string;
+    sort: string;
+  };
+};
+
+export type ActivityLog = {
+  activeDuration: number;
+  activityLevel: ActivityLevel[];
+  activityName: string;
+  activityTypeId: number;
+  calories: number;
+  caloriesLink: string;
+  duration: number;
+  elevationGain: number;
+  lastModified: string;
+  logId: number;
+  logType: string;
+  manualValuesSpecified: {
+    calories: boolean;
+    distance: boolean;
+    steps: boolean;
+  };
+  originalDuration: number;
+  originalStartTime: string;
+  startTime: string;
+  steps: number;
+  tcxLink: string;
+};
+
+export type ActivityLevel = {
+  minutes: number;
+  name: string;
+};
+
 // Activity Intraday API Types
 export type ActivityStepsIntradayResponse = {
   "activities-steps": {

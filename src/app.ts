@@ -112,6 +112,8 @@ cron.schedule(process.env.CRON_IMPORT!, async () => {
   } catch (err) {
     console.error('Scheduled job error:', err);
   }
+}, {
+  timezone: 'UTC'
 });
 
 
@@ -121,6 +123,8 @@ cron.schedule(process.env.CRON_DATA_DUMP!, async () => {
   } catch (err) {
     console.error('Scheduled job error:', err);
   }
+}, {
+  timezone: 'UTC'
 });
 
 

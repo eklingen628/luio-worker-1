@@ -1,5 +1,5 @@
 import { executeQuery } from "../db/connection";
-import { ActivityStepsIntradayResponse } from "../types";
+import { ActivityLogListResponse, ActivityStepsIntradayResponse } from "../types";
 
 export async function insertActivityData(
 	data: any,
@@ -147,5 +147,77 @@ export async function insertStepsIntraday(
 			stack: (err as Error).stack,
 		});
 		return new Response('Unexpected error inserting steps intraday data', { status: 500 });
+	}
+}
+
+
+export async function insertActivityLogList(
+	data: ActivityLogListResponse,
+	dateQueried: string,
+	user_id: string
+): Promise<Response | null> {
+	try {
+		const entries = data["activities"];
+		for (const entry of entries) {
+			const {
+				activeDuration,
+				activityLevel,
+				activityName,
+				activityTypeId,
+				calories,
+				duration,
+				elevationGain,
+				lastModified,
+				logId,
+				logType,
+				manualValuesSpecified,
+				originalDuration,
+				originalStartTime,
+				startTime,
+				steps
+			} = entry;
+
+			const { calories: manualCaloriesSpecified, distance: manualDistanceSpecified, steps: manualStepsSpecified } = manualValuesSpecified;
+
+			await executeQuery(`
+				INSERT INTO activity_log_activities (user_id, activity_log_id, active_duration, activity_name, activity_type_id, calories, duration_ms, elevation_gain, last_modified, log_type, manual_calories_specified, manual_distance_specified, manual_steps_specified, original_duration_ms, original_start_time, start_time, steps)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+				ON CONFLICT (user_id, activity_log_id)
+				DO UPDATE SET
+					active_duration = EXCLUDED.active_duration,
+					activity_name = EXCLUDED.activity_name,
+					activity_type_id = EXCLUDED.activity_type_id,
+					calories = EXCLUDED.calories,
+					duration_ms = EXCLUDED.duration_ms,
+					elevation_gain = EXCLUDED.elevation_gain,
+					last_modified = EXCLUDED.last_modified,
+					log_type = EXCLUDED.log_type,
+					original_duration_ms = EXCLUDED.original_duration_ms,
+					original_start_time = EXCLUDED.original_start_time,
+					start_time = EXCLUDED.start_time,
+					steps = EXCLUDED.steps,
+					manual_calories_specified = EXCLUDED.manual_calories_specified,
+					manual_distance_specified = EXCLUDED.manual_distance_specified,
+					manual_steps_specified = EXCLUDED.manual_steps_specified
+				`, [user_id, logId, activeDuration, activityName, activityTypeId, calories, duration, elevationGain, lastModified, logType, manualCaloriesSpecified, manualDistanceSpecified, manualStepsSpecified, originalDuration, originalStartTime, startTime, steps]);
+
+				for (const level of activityLevel) {
+					const { minutes, name } = level;
+					await executeQuery(`
+						INSERT INTO activity_log_activity_levels (activity_log_id, minutes, level_name)
+						VALUES ($1, $2, $3)
+						ON CONFLICT (activity_log_id, level_name)
+						DO UPDATE SET minutes = EXCLUDED.minutes
+					`, [logId, minutes, name]);
+				}
+		}
+		return null;
+	} catch (err) {
+		console.log({
+			source: 'insertActivityLogList',
+			message: (err as Error).message,
+			stack: (err as Error).stack,
+		});
+		return new Response('Unexpected error inserting activity log list data', { status: 500 });
 	}
 }

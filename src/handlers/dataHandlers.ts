@@ -1,7 +1,7 @@
 import { insertSleepData } from '../data/sleep';
-import { insertActivityData, insertStepsIntraday } from '../data/activity';
+import { insertActivityData, insertStepsIntraday, insertActivityLogList } from '../data/activity';
 import { insertHRTimeSeries, insertHRVData, insertHeartIntraday, insertHRVIntraday } from '../data/heart';
-import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse, HeartRateIntradayResponse, HrvIntradayResponse, ActivityStepsIntradayResponse } from '../types';
+import { SleepApiResponse, ActivitySummaryResponse, HeartApiResponse, HrvResponse, HeartRateIntradayResponse, HrvIntradayResponse, ActivityStepsIntradayResponse, ActivityLogListResponse } from '../types';
 
 // Define DATA_HANDLERS first, then derive everything from it
 const DATA_HANDLERS_IMPL = {
@@ -41,6 +41,11 @@ const DATA_HANDLERS_IMPL = {
     insert: (data: ActivityStepsIntradayResponse, date: string, userId: string) => insertStepsIntraday(data, date, userId),
     //Detail level: 1sec | 1min | 5min | 15min. Currently set to 5min. Resource: Supported: calories | distance | elevation | floors | steps | swimming-strokes
     apiCall: (userId: string, date: string) => `/1/user/${userId}/activities/steps/date/${date}/1d/5min.json`
+  },
+  getActivityLogList: {
+    check: (data: any): data is ActivityLogListResponse => 'activities-log-list' in data,
+    insert: (data: ActivityLogListResponse, date: string, userId: string) => insertActivityLogList(data, date, userId),
+    apiCall: (userId: string, date: string) =>  `/1/user/${userId}/activities/list.json?beforeDate=${date}&sort=desc&limit=100&offset=0`
   }
 } as const;
 
