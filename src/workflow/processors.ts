@@ -57,6 +57,19 @@ export async function processUserDataForDateAndAction(
   action: ConfigType
 ): Promise<FitBitUserIDData | void> {
   try {
+
+    const handler = DATA_HANDLERS[action];
+
+    if (!handler) {
+      console.log(`Error getting handler for ${action}`)
+      return
+    }
+    
+    if (!handler.checkDate(userData.first_added, dateQueried)) {
+      console.log(`Error, the date queried ${dateQueried} is earlier than the date ${userData.first_added}. Cancelling query.`)
+      return
+    }
+
     const queriedData = await getData(userData, action, dateQueried);
 
     if (!queriedData) {
@@ -66,8 +79,8 @@ export async function processUserDataForDateAndAction(
 
     console.log(`Processing ${action} data for user ${userData.user_id} on ${dateQueried}`);
     
-    const handler = DATA_HANDLERS[action];
-    if (handler && handler.check(queriedData.dataFromQuery)) {
+    
+    if (handler.checkFitbitAPIType(queriedData.dataFromQuery)) {
       await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id);
     } else {
       console.log(`Type mismatch for ${action} data - expected data type not found`);
@@ -113,7 +126,7 @@ export async function processUserDataForDateAndAction(
           console.log(`Processing ${action} data for user ${userData.user_id} on ${dateQueried} (retry)`);
           
           const handler = DATA_HANDLERS[action];
-          if (handler && handler.check(retryData.dataFromQuery)) {
+          if (handler && handler.checkFitbitAPIType(retryData.dataFromQuery)) {
             await handler.insert(retryData.dataFromQuery, dateQueried, userData.user_id);
           } else {
             console.log(`Type mismatch for ${action} data - expected data type not found`);
