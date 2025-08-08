@@ -79,9 +79,10 @@ export async function processUserDataForDateAndAction(
 
     console.log(`Processing ${action} data for user ${userData.user_id} on ${dateQueried}`);
     
+
     
     if (handler.checkFitbitAPIType(queriedData.dataFromQuery)) {
-      await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id);
+      await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id, userData.first_added);
     } else {
       console.log(`Type mismatch for ${action} data - expected data type not found`);
     }
@@ -127,7 +128,7 @@ export async function processUserDataForDateAndAction(
           
           const handler = DATA_HANDLERS[action];
           if (handler && handler.checkFitbitAPIType(retryData.dataFromQuery)) {
-            await handler.insert(retryData.dataFromQuery, dateQueried, userData.user_id);
+            await handler.insert(retryData.dataFromQuery, dateQueried, userData.user_id, userData.first_added);
           } else {
             console.log(`Type mismatch for ${action} data - expected data type not found`);
           }
