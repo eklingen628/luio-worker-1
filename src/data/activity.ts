@@ -154,11 +154,16 @@ export async function insertStepsIntraday(
 export async function insertActivityLogList(
 	data: ActivityLogListResponse,
 	dateQueried: string,
-	user_id: string
+	user_id: string,
+	firstAdded: string
 ): Promise<Response | null> {
 	try {
 		const entries = data["activities"];
 		for (const entry of entries) {
+			// Skip activities before user's first_added date
+			if (new Date(entry.originalStartTime).getTime() < new Date(firstAdded).getTime()) {
+				continue;
+			}
 			const {
 				activeDuration,
 				activityLevel,

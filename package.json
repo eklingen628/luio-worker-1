@@ -6,28 +6,26 @@
 		"build": "tsc",
 		"start": "dotenvx run -f .env.local -- pm2 start ecosystem.config.js --env local",
 		"dev": "dotenvx run -f .env.local -- ts-node src/app.ts",
-		"cli": "dotenvx run -f .env.local -- ts-node src/utils/cli.ts",
-		"test-email": "dotenvx run -f .env.local -- ts-node src/utils/email.ts"
+		"cli": "dotenvx run -f .env.local -- node dist/utils/cli.js 2>&1 | tee -a logs/cli.log",
+		"refresh": "npm install && rm -rf dist && npm run build"
 	},
 	"devDependencies": {
 		"@types/cookie-parser": "^1.4.9",
 		"@types/express": "^5.0.3",
+		"@types/nodemailer": "^6.4.17",
 		"@types/pg": "^8.15.4",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.8.3",
-		"wrangler": "^4.22.0"
+		"typescript": "^5.8.3"
 	},
 	"dependencies": {
-		"@badgateway/oauth2-client": "^3.2.0",
 		"@dotenvx/dotenvx": "^1.48.3",
-		"@supabase/supabase-js": "^2.50.3",
-		"@types/nodemailer": "^6.4.17",
 		"cookie-parser": "^1.4.7",
-		"dotenv": "^17.2.0",
 		"express": "^5.1.0",
 		"node-cron": "^4.2.1",
 		"nodemailer": "^7.0.5",
 		"pg": "^8.16.3",
+		"pino": "^9.8.0",
+		"pino-pretty": "^13.1.1",
 		"pm2": "^6.0.8"
 	}
 }
