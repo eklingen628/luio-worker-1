@@ -57,6 +57,19 @@ export async function processUserDataForDateAndAction(
   action: ConfigType
 ): Promise<FitBitUserIDData | void> {
   try {
+
+    const handler = DATA_HANDLERS[action];
+
+    if (!handler) {
+      console.log(`Error getting handler for ${action}`)
+      return
+    }
+    
+    if (!handler.checkDate(userData.first_added, dateQueried)) {
+      console.log(`Error, the date queried ${dateQueried} is earlier than the date the user was first added ${userData.first_added}. Cancelling query.`)
+      return
+    }
+
     const queriedData = await getData(userData, action, dateQueried);
 
     if (!queriedData) {
@@ -70,7 +83,8 @@ export async function processUserDataForDateAndAction(
     if (handler && handler.check(queriedData.dataFromQuery)) {
       await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id);
     } else {
-      console.log(`Type mismatch for ${action} data - expected data type not found`);
+      console.log(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
+      console.log(queriedData.dataFromQuery)
     }
   } catch (err) {
     // Handle token expiration
@@ -116,7 +130,8 @@ export async function processUserDataForDateAndAction(
           if (handler && handler.check(retryData.dataFromQuery)) {
             await handler.insert(retryData.dataFromQuery, dateQueried, userData.user_id);
           } else {
-            console.log(`Type mismatch for ${action} data - expected data type not found`);
+            console.log(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
+            console.log(retryData.dataFromQuery)
           }
           
           // Return the updated user data so it can be used for subsequent actions
