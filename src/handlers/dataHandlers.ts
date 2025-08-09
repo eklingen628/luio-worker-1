@@ -66,7 +66,7 @@ export type ConfigType = keyof typeof DATA_HANDLERS_IMPL;
 export type DataHandler<T> = {
   checkFitbitAPIType: (data: any) => data is T;
   checkDate: (firstAdded: string, date: string,) => boolean;
-  insert: (data: T, date: string, userId: string, firstAdded?: string) => Promise<any>;
+  insert: (data: T, date: string, userId: string, firstAdded: string) => Promise<any>;
   apiCall: (userId: string, date: string) => string;
 };
 
