@@ -23,7 +23,7 @@ export function getDateString(date: Date): string {
 	return `${month}-${day}-${year}`;
 }
 
-export function genDates(startDate: string, endDate?: string): string[] | null {
+export function genDates(limitRange: boolean, startDate: string, endDate?: string): string[] | null {
 	let sd = new Date(startDate);
 
 	//set hours to 0 on the date, to ensure 1 day increment works in the for loop
@@ -50,7 +50,7 @@ export function genDates(startDate: string, endDate?: string): string[] | null {
 	} else if (diff < 1) {
 		console.log('Error, inputted dates must be at least 1 day apart. Exiting.');
 		return null;
-	} else if (diff > 31) {
+	} else if (limitRange && diff > 31) {
 		console.log('Error, cannot support more than 31 days of range. Exiting.');
 		return null;
 	} else {

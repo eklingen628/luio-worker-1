@@ -30,7 +30,7 @@ async function getDataOnDemand() {
     process.exit(1);
   }
 
-  const dates = genDates(startDate, endDate);
+  const dates = genDates(true, startDate, endDate);
 
   if (!dates) {
     console.log(`No dates generated for user ${userId}`);

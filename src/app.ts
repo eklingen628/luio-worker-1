@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { generatePKCE } from './utils/auth';
+import { generatePKCE } from './api/auth';
 import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
