@@ -117,15 +117,15 @@ cron.schedule(process.env.CRON_IMPORT!, async () => {
 });
 
 
-cron.schedule(process.env.CRON_DATA_DUMP!, async () => {
-  try {
-    await sendEmail(dataDump);
-  } catch (err) {
-    console.error('Scheduled job error:', err);
-  }
-}, {
-  timezone: 'UTC'
-});
+// cron.schedule(process.env.CRON_DATA_DUMP!, async () => {
+//   try {
+//     await sendEmail(dataDump);
+//   } catch (err) {
+//     console.error('Scheduled job error:', err);
+//   }
+// }, {
+//   timezone: 'UTC'
+// });
 
 
 
