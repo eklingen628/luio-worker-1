@@ -3,6 +3,7 @@ import { splitData } from './scope';
 import path from 'path';
 import fs from 'fs';
 import { getDateString } from './date';
+import { config } from '../config';
 
 
 
@@ -18,14 +19,14 @@ type EmailOptions = {
 }
 
 export const emailToFromSelf = {
-    from: process.env.EMAIL_USER ?? '',
-    to: process.env.EMAIL_USER ?? '',
+    from: config.email.user ?? '',
+    to: config.email.user ?? '',
 }
 
 export const scopeEmail: EmailOptions = {
     ...emailToFromSelf,
     subject: 'AUTOMATED EMAIL -- USER MISSING REQUIRED SCOPES',
-    text: `One or more users is missing the required scopes: \n\n${splitData(process.env.SCOPES_NEEDED ?? '').join('\n')}\n\nPlease check the application's logs to determine which user, and have the user re-log in to provde access to needed scopes.`,
+    text: `One or more users is missing the required scopes: \n\n${splitData(config.fitbit.scopes ?? '').join('\n')}\n\nPlease check the application's logs to determine which user, and have the user re-log in to provde access to needed scopes.`,
     attachments: []
 }
 
@@ -40,8 +41,8 @@ export const notWearingDevice: EmailOptions = {
 
 
 export const dataDump: EmailOptions = {
-    to: process.env.EMAIL_USER ?? '',
-    from: process.env.EMAIL_USER ?? '',
+    from: config.email.user ?? '',
+    to: config.email.user ?? '',
     subject: `AUTOMATED EMAIL -- DATA DUMP ${getDateString(new Date())}`,
     text: `Data dump.`,
     attachments: []
@@ -57,15 +58,15 @@ export const errorEmail: EmailOptions = {
 }
 
 
-const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
+export const transporter = nodemailer.createTransport({
+    service: config.email.service,
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: config.email.user,
+        pass: config.email.pass,
     },
 });
 
-const parentDir = process.env.DATA_DUMP_DIR!;
+const parentDir = config.dataDumpDir;
 
 
 

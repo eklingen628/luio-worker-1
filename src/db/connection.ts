@@ -1,7 +1,8 @@
 import { Pool, QueryResultRow, QueryResult } from 'pg';
+import { config } from '../config';
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: config.dbURL,
 });
 
 export async function executeQuery<T extends QueryResultRow = QueryResultRow>(text: string, params: any[]): Promise<QueryResult<T>> {

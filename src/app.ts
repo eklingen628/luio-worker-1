@@ -8,10 +8,10 @@ import { insertUserData } from './data/user';
 import { runImport } from './utils/scheduled';
 import { dataDump, sendEmail } from './utils/email';
 
-  
+import { config } from './config';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
@@ -27,10 +27,10 @@ app.get('/auth', async (req: Request, res: Response) => {
 
   const { code_verifier, code_challenge } = await generatePKCE();
 
-  fitbitAuthUrl.searchParams.set('client_id', process.env.FITBIT_CLIENT_ID!);
+  fitbitAuthUrl.searchParams.set('client_id', config.fitbit.clientId);
   fitbitAuthUrl.searchParams.set('response_type', 'code');
-  fitbitAuthUrl.searchParams.set('scope', process.env.SCOPES_NEEDED!);
-  fitbitAuthUrl.searchParams.set('redirect_uri', process.env.REDIRECT_URI!);
+  fitbitAuthUrl.searchParams.set('scope', config.fitbit.scopes);
+  fitbitAuthUrl.searchParams.set('redirect_uri', config.fitbit.redirectUri);
   fitbitAuthUrl.searchParams.set('code_challenge', code_challenge);
   fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
 
@@ -59,13 +59,13 @@ app.get('/callback', async (req: Request, res: Response) => {
 
   const tokenURL = 'https://api.fitbit.com/oauth2/token';
   const body = new URLSearchParams();
-  body.set('client_id', process.env.FITBIT_CLIENT_ID!);
+  body.set('client_id', config.fitbit.clientId);
   body.set('grant_type', 'authorization_code');
-  body.set('redirect_uri', process.env.REDIRECT_URI!);
-  body.set('code', authcode);
+  body.set('redirect_uri', config.fitbit.redirectUri);
+  body.set('code', authCode);
   body.set('code_verifier', verifierString);
 
-  const authString = `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`;
+  const authString = `${config.fitbit.clientId}:${config.fitbit.clientSecret}`;
   const encodedAuth = Buffer.from(authString).toString('base64');
 
   try {
@@ -106,7 +106,7 @@ app.get('/callback', async (req: Request, res: Response) => {
 
 
 // Schedule to run once per day at 2:00 AM server time
-cron.schedule(process.env.CRON_IMPORT!, async () => {
+cron.schedule(config.cron.import, async () => {
   try {
     await runImport();
   } catch (err) {

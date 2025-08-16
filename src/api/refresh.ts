@@ -1,4 +1,5 @@
 import { UserToken, FitBitUserIDData } from "../types";
+import { config } from "../config"
 
 export async function refreshToken(userData: FitBitUserIDData): Promise<UserToken> {
   const tokenURL = new URL("https://api.fitbit.com/oauth2/token");
@@ -7,7 +8,7 @@ export async function refreshToken(userData: FitBitUserIDData): Promise<UserToke
   body.set("grant_type", "refresh_token");
   body.set("refresh_token", userData.refresh_token);
 
-  const authString = `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`;
+  const authString = `${config.fitbit.clientId}:${config.fitbit.clientSecret}`;
   const encodedAuth = Buffer.from(authString).toString('base64');
 
   try {
