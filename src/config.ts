@@ -9,6 +9,7 @@ const requiredEnvVars = [
   'CRON_IMPORT',
   'CRON_USAGE_VAL',
   'DATABASE_URL',
+  'LOG_DIR'
 ];
 
 // Validate required environment variables
@@ -37,5 +38,6 @@ export const config = {
   },
   dbURL: process.env.DATABASE_URL!,
   dataDumpDir: process.env.DATA_DUMP_DIR!,
+  logDir: process.env.LOG_DIR!,
   port: 3000
 };
