@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
-import { runImport } from './utils/scheduled';
+import { runImport, runUsageValidation } from './utils/scheduled';
 import { dataDump, sendEmail } from './utils/email';
 import crypto from 'crypto';
 import { config } from './config';
@@ -23,7 +23,6 @@ app.get(['/', '/index.html'], (req: Request, res: Response) => {
 });
 
 app.get('/auth', async (req: Request, res: Response) => {
-
 
   const { code_verifier, code_challenge } = await generatePKCE();
 
@@ -121,16 +120,18 @@ cron.schedule(config.cron.import, async () => {
 });
 
 
-// cron.schedule(process.env.CRON_DATA_DUMP!, async () => {
-//   try {
-//     await sendEmail(dataDump);
-//   } catch (err) {
-//     console.error('Scheduled job error:', err);
-//   }
-// }, {
-//   timezone: 'UTC'
-// });
 
+
+
+cron.schedule(config.cron.usageValidation, async () => {
+  try {
+    await runUsageValidation();
+  } catch (err) {
+    console.error('Scheduled job error:', err);
+  }
+}, {
+  timezone: 'UTC'
+});
 
 
 

@@ -14,7 +14,8 @@ type EmailOptions = {
     text: string;
     attachments: {
         filename: string;
-        path: string;
+        path?: string;
+        content?: string | Buffer;
     }[];
 }
 
