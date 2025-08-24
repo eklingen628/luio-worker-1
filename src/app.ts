@@ -41,14 +41,14 @@ app.get('/auth', async (req: Request, res: Response) => {
   fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
   fitbitAuthUrl.searchParams.set('state', state)
 
-  
+  console.log(fitbitAuthUrl.toString());
   // Redirect to Fitbit authorization URL
   res.redirect(fitbitAuthUrl.toString());
 });
 
 app.get('/callback', async (req: Request, res: Response) => {
-  const {authcode, state} = req.query as { authcode?: string; state?: string };
-  if (!authcode || !state) {
+  const {code, state} = req.query as { code?: string; state?: string };
+  if (!code || !state) {
     return res.status(400).send('Missing code/state');
   }
 
@@ -64,7 +64,7 @@ app.get('/callback', async (req: Request, res: Response) => {
   body.set('client_id', config.fitbit.clientId);
   body.set('grant_type', 'authorization_code');
   body.set('redirect_uri', config.fitbit.redirectUri);
-  body.set('code', authcode);
+  body.set('code', code);
   body.set('code_verifier', verifierString);
 
   const authString = `${config.fitbit.clientId}:${config.fitbit.clientSecret}`;
