@@ -39,7 +39,7 @@ export async function getVerifierString(state: string): Promise<string | null> {
 		const result = await executeQuery<VerifierResult>(
 			`DELETE FROM oauth_state 
 			WHERE state = $1 
-			AND created_at > NOW() - INTERVAL '10 minutes'
+			AND expires_at > NOW() - INTERVAL '10 minutes'
 			RETURNING code_verifier`, 
 			[state]
 		)
