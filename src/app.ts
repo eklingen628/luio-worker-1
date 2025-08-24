@@ -23,7 +23,7 @@ app.get(['/', '/index.html'], (req: Request, res: Response) => {
 });
 
 app.get('/auth', async (req: Request, res: Response) => {
-  const fitbitAuthUrl = new URL('https://www.fitbit.com/oauth2/authorize');
+
 
   const { code_verifier, code_challenge } = await generatePKCE();
 

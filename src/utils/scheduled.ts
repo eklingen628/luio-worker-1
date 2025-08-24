@@ -25,7 +25,7 @@ export async function runImport() {
     //set the start date to 3 days ago
     startDate.setDate(startDate.getDate() - 3);
 
-    const dates = genDates(startDate.toDateString(), endDate.toISOString());
+    const dates = genDates(false, startDate.toDateString(), endDate.toISOString());
 
     if (!dates) {
       console.log(`Error in generating dates startdate: ${startDate.toISOString()} enddate: ${endDate.toISOString()}`);
