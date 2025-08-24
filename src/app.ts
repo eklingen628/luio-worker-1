@@ -1,13 +1,13 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
-import { generatePKCE } from './api/auth';
+import { generatePKCE, getVerifierString, insertState } from './api/auth';
 import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
 import { runImport } from './utils/scheduled';
 import { dataDump, sendEmail } from './utils/email';
-
+import crypto from 'crypto';
 import { config } from './config';
 
 const app = express();
@@ -27,32 +27,34 @@ app.get('/auth', async (req: Request, res: Response) => {
 
   const { code_verifier, code_challenge } = await generatePKCE();
 
+  const state = crypto.randomUUID()
+
+  await insertState(state, code_verifier)
+
+  const fitbitAuthUrl = new URL('https://www.fitbit.com/oauth2/authorize');
+
   fitbitAuthUrl.searchParams.set('client_id', config.fitbit.clientId);
   fitbitAuthUrl.searchParams.set('response_type', 'code');
   fitbitAuthUrl.searchParams.set('scope', config.fitbit.scopes);
   fitbitAuthUrl.searchParams.set('redirect_uri', config.fitbit.redirectUri);
   fitbitAuthUrl.searchParams.set('code_challenge', code_challenge);
   fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
+  fitbitAuthUrl.searchParams.set('state', state)
 
-  // Set the PKCE verifier as a cookie
-  res.cookie('verifier', code_verifier, {
-    path: '/',
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-  });
-
+  
   // Redirect to Fitbit authorization URL
   res.redirect(fitbitAuthUrl.toString());
 });
 
 app.get('/callback', async (req: Request, res: Response) => {
-  const authcode = req.query.code as string | undefined;
-  if (!authcode) {
-    return res.status(400).send('Missing code');
+  const {authcode, state} = req.query as { authcode?: string; state?: string };
+  if (!authcode || !state) {
+    return res.status(400).send('Missing code/state');
   }
 
-  const verifierString = req.cookies.verifier;
+  const verifierString = await getVerifierString(state);
+
+
   if (!verifierString) {
     return res.status(400).send('Missing verifier');
   }
@@ -62,7 +64,7 @@ app.get('/callback', async (req: Request, res: Response) => {
   body.set('client_id', config.fitbit.clientId);
   body.set('grant_type', 'authorization_code');
   body.set('redirect_uri', config.fitbit.redirectUri);
-  body.set('code', authCode);
+  body.set('code', authcode);
   body.set('code_verifier', verifierString);
 
   const authString = `${config.fitbit.clientId}:${config.fitbit.clientSecret}`;
