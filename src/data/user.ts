@@ -42,7 +42,7 @@ export async function insertUserData(data: UserToken, client?: PoolClient): Prom
 }
 
 export async function getAllUserData(): Promise<FitBitUserIDData[] | null> {
-	const result = await executeQuery('SELECT * FROM fitbit_users', []);
+	const result = await executeQuery<FitBitUserIDData>('SELECT * FROM fitbit_users', []);
 
 	if (result.rowCount === 0) {
 		console.log({
