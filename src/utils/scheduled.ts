@@ -48,7 +48,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check activity data
     const activityResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried::text),
         '{}'
       ) AS date_list
       FROM daily_activity_summary
@@ -58,7 +58,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check sleep data  
     const sleepResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried::text),
         '{}'
       ) AS date_list
       FROM sleep_log
@@ -68,7 +68,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check HRV data
     const hrvResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried::text),
         '{}'
       ) AS date_list
       FROM hrv_data
