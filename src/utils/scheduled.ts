@@ -48,7 +48,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check activity data
     const activityResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
         '{}'
       ) AS date_list
       FROM daily_activity_summary
@@ -58,7 +58,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check sleep data  
     const sleepResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
         '{}'
       ) AS date_list
       FROM sleep_log
@@ -68,7 +68,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     // Check HRV data
     const hrvResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
-        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY 1),
         '{}'
       ) AS date_list
       FROM hrv_data
@@ -158,6 +158,13 @@ function buildComprehensiveValuesClauses(rows: MissingDataRow[]) {
 export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Promise<QueryResult<MissingDataRow> | null> {
 
   try {
+    if (!rows || rows.length === 0) {
+      console.log({
+        source: 'insertComprehensiveMissingData',
+        message: 'No rows provided for insertion'
+      });
+      return null;
+    }
     
     const { placeholders, flattened } = buildComprehensiveValuesClauses(rows);
 
@@ -282,7 +289,10 @@ export async function runComprehensiveUsageValidation() {
       csv.stringify(
         rowsForCSV,
         (err, output) => {
-          if (err) throw err;
+          if (err) {
+            console.error('Failed to generate CSV for missing data:', err);
+            return;
+          }
           notWearingDevice.attachments = [
             {
               filename: 'missing_data.csv',

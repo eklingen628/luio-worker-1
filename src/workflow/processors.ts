@@ -4,7 +4,7 @@ import { getOneUserData, insertUserData } from '../data/user';
 import { FitBitUserIDData } from '../types';
 import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { pool } from '../db/connection';
-import { checkDate } from '../utils/date';
+import { dateIsValid } from '../utils/date';
 
 
 
@@ -66,7 +66,7 @@ export async function processUserDataForDateAndAction(
       return
     }
     
-    if (!checkDate(userData.first_added, dateQueried)) {
+    if (!dateIsValid(userData.first_added, dateQueried)) {
       console.log(`Error, the date queried ${dateQueried} is earlier than the date the user was first added ${userData.first_added}. Cancelling query.`)
       return
     }

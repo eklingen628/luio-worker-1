@@ -4,6 +4,7 @@ import { processUserData } from '../workflow/processors';
 import { getOneUserData, getAllUserData } from '../data/user';
 import { ConfigType, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { sendEmail, dataDump } from './email';
+import { runComprehensiveUsageValidation } from './scheduled';
 
 
 
@@ -82,17 +83,30 @@ async function runOnDemand() {
   
   if (!flag) {
     console.log('Invalid. You must provide a flag.');
-    console.log('Valid flags: email or get');
+    console.log('Valid flags: email, get, validate');
     process.exit(1);
   }
   
   if (flag === 'email') {
     await sendEmail(dataDump);
+    console.log('Email send completed');
+    process.exit(0);
   } else if (flag === 'get') {
     await getDataOnDemand();
+    console.log('Data import completed');
+    process.exit(0);
+  } else if (flag === 'validate') {
+    try {
+      await runComprehensiveUsageValidation();
+      console.log('Usage validation completed');
+      process.exit(0);
+    } catch (err) {
+      console.error('Validation error:', err);
+      process.exit(1);
+    }
   } else {
     console.log('Invalid flag.');
-    console.log('Valid flags: email or get');
+    console.log('Valid flags: email, get, validate');
     process.exit(1);
   }
 }
