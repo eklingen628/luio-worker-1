@@ -36,7 +36,7 @@ export const scopeEmail: EmailOptions = {
 export const notWearingDevice: EmailOptions = {
     ...emailToFromSelf,
     subject: 'AUTOMATED EMAIL -- USER NOT WEARING DEVICE',
-    text: `One or more users is not wearing their device. Please check the application's logs to determine which user.`,
+    text: `One or more users is not wearing their device. Please see attached.`,
     attachments: []
 }
 

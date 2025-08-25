@@ -12,63 +12,40 @@ import fs from 'fs'
 
 
 
-// function binSearch(arr: string[], findValue: string) {
-
-//   let first = 0
-//   let last = arr.length - 1;  
-
-//   while (first <= last) {
-//     let mid = Math.floor((last + first) / 2)
-//     if (arr[mid] === findValue) {
-//       return mid;
-//     }
-//     else if ()
-
-//   }
-
-// }
-
 
 
 type UsageDataValidation = {
   date_list: string[];
 }
 
-type NotWearingDatesByUser = {
-  [user_id: string]: string[]
+// New types for comprehensive missing data tracking
+type MissingDataRow = {
+  user_id: string;
+  date_missing: string;
+  missing_activity: boolean;
+  missing_sleep: boolean;
+  missing_hrv: boolean;
 }
 
-type NotWearingRow = {
-  user_id: string,
-  date_not_wearing: string
+type MissingDataByUser = {
+  [user_id: string]: MissingDataRow[]
 }
 
-
-
-export async function getUsageObject(userData: FitBitUserIDData, dateNotUsedObj: NotWearingDatesByUser) {
-
+/**
+ * Enhanced function to check comprehensive missing data across multiple data types
+ */
+export async function getComprehensiveUsageObject(userData: FitBitUserIDData): Promise<MissingDataRow[] | null> {
   const {user_id, first_added} = userData;
 
-  if (!Object.prototype.hasOwnProperty.call(dateNotUsedObj, user_id)) {
-    dateNotUsedObj[user_id] = []
-  }
-
   try {
-
-    //get string array of days since the user was added to the db
     const daysSinceAdded = genDates(false, first_added, new Date().toISOString())
-
+    
     if (!daysSinceAdded) {
       console.log("Error getting dates")
       return null;
     }
 
-    // if (finalArr.length === 0) {
-    //   finalArr.push(["user_id", "date_missing_data"])
-    // }
-    
-
-   // return an array of dates. missing dates indicate user was not wearing device on those dates
+    // Check activity data
     const activityResult = await executeQuery<UsageDataValidation>(`
       SELECT COALESCE(
         ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
@@ -78,28 +55,56 @@ export async function getUsageObject(userData: FitBitUserIDData, dateNotUsedObj:
       WHERE user_id = $1   
       `, [user_id]);
 
-    
-    const activityResultDates = activityResult.rows[0].date_list
+    // Check sleep data  
+    const sleepResult = await executeQuery<UsageDataValidation>(`
+      SELECT COALESCE(
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
+        '{}'
+      ) AS date_list
+      FROM sleep_log
+      WHERE user_id = $1   
+      `, [user_id]);
 
-    if (activityResultDates.length === 0) {
-      console.log("No dates whatsoever were found for user:", user_id)
-      daysSinceAdded.forEach(day => dateNotUsedObj[user_id].push(day))
-      return dateNotUsedObj
-    }
+    // Check HRV data
+    const hrvResult = await executeQuery<UsageDataValidation>(`
+      SELECT COALESCE(
+        ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried),
+        '{}'
+      ) AS date_list
+      FROM hrv_data
+      WHERE user_id = $1   
+      `, [user_id]);
 
-    const dateSet = new Set(activityResultDates)   
+    const activityDates = new Set(activityResult.rows[0].date_list);
+    const sleepDates = new Set(sleepResult.rows[0].date_list);
+    const hrvDates = new Set(hrvResult.rows[0].date_list);
     
+    // Build comprehensive missing data object
+    const missingData: MissingDataRow[] = [];
+
     for (const day of daysSinceAdded) {
-      if (!dateSet.has(day)) {
-        dateNotUsedObj[user_id].push(day)
+      const missingActivity = !activityDates.has(day);
+      const missingSleep = !sleepDates.has(day);
+      const missingHrv = !hrvDates.has(day);
+      
+      // Only create row if at least one data type is missing
+      if (missingActivity || missingSleep || missingHrv) {
+        missingData.push({
+          user_id,
+          date_missing: day,
+          missing_activity: missingActivity,
+          missing_sleep: missingSleep,
+          missing_hrv: missingHrv
+        });
       }
     }
 
-    return dateNotUsedObj;
+    return missingData;
+
 
   } catch (err) {
     console.log({
-      source: 'createDateNotUsedObj',
+      source: 'getComprehensiveUsageObject',
       message: (err as Error).message,
       stack: (err as Error).stack,
     });
@@ -108,56 +113,67 @@ export async function getUsageObject(userData: FitBitUserIDData, dateNotUsedObj:
 }
 
 
+/**
+ * Builds a 2D array from comprehensive missing data for database insertion
+ */
+function buildComprehensiveMissingDataArray(missingDataByUser: MissingDataByUser): MissingDataRow[] {
+  const allMissingData: MissingDataRow[] = []
 
-
-function build2DArray(obj: NotWearingDatesByUser) {
-  const userIDs = Object.keys(obj)
-  const arr: string[][] = []
-
-  for (const userID of userIDs) {
-    const dates = obj[userID]
-    for (const date of dates) {
-      arr.push([userID, date])
-    }
+  const UserIDs = Object.keys(missingDataByUser)
+  
+  for (const userID of UserIDs) {
+    const userMissingData = missingDataByUser[userID]
+    allMissingData.push(...userMissingData)
   }
-  return arr
+  
+  return allMissingData
 }
 
-
-function buildValuesClauses(rows: string[][]) {
-  const placeholders = rows.map((_, i) => `($${i*2+1}, $${i*2+2})`).join(', ');
-  const flattened = rows.flat();
+/**
+ * Builds SQL placeholders for comprehensive missing data insertion
+ */
+function buildComprehensiveValuesClauses(rows: MissingDataRow[]) {
+  const placeholders = rows.map((_, i) => 
+    `($${i*5+1}, $${i*5+2}, $${i*5+3}, $${i*5+4}, $${i*5+5})`
+  ).join(', ');
+  
+  const flattened = rows.flatMap(row => [
+    row.user_id, 
+    row.date_missing, 
+    row.missing_activity, 
+    row.missing_sleep, 
+    row.missing_hrv
+  ]);
+  
   return { placeholders, flattened };
 }
 
 
-
-
 /**
- * Adds rows to the not_wearing_device table
+ * Adds comprehensive missing data rows to the missing_data_tracking table
  * 
- * @param rows The 2d array to insert
- * @returns The rows that were added to the not_wearing_device table without conflict
+ * @param rows The array of MissingDataRow objects to insert
+ * @returns The rows that were added to the missing_data_tracking table without conflict
  */
-export async function insertMissingUsage(rows: string[][]): Promise<QueryResult<NotWearingRow> | null> {
+export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Promise<QueryResult<MissingDataRow> | null> {
 
   try {
     
-    const { placeholders, flattened } = buildValuesClauses(rows);
+    const { placeholders, flattened } = buildComprehensiveValuesClauses(rows);
 
-    const rowsInserted = await executeQuery<NotWearingRow>(`
-      INSERT INTO not_wearing_device
-      (user_id, date_not_wearing)
-      VALUES (${placeholders})
-        ON CONFLICT (user_id, date_not_wearing) DO NOTHING
-        RETURNING user_id, date_not_wearing
+    const rowsInserted = await executeQuery<MissingDataRow>(`
+      INSERT INTO missing_data_tracking
+      (user_id, date_missing, missing_activity, missing_sleep, missing_hrv)
+      VALUES ${placeholders}
+        ON CONFLICT (user_id, date_missing) DO NOTHING
+        RETURNING user_id, date_missing, missing_activity, missing_sleep, missing_hrv
       `, flattened)
 
     
     if (rowsInserted.rowCount === 0) {
       console.log({
-        source: 'insert-missing-usage',
-        message: "No users found that miss usage",
+        source: 'insert-comprehensive-missing-data',
+        message: "No missing data rows were inserted",
       });
       return null;
     }
@@ -165,20 +181,15 @@ export async function insertMissingUsage(rows: string[][]): Promise<QueryResult<
     return rowsInserted;
   
   } catch (err) {
+    console.log({
+      source: 'insertComprehensiveMissingData',
+      message: (err as Error).message,
+      stack: (err as Error).stack,
+    });
     throw err
   }
 
 }
-
-
-
-
-
-
-
-
-
-
 
 export async function runImport() {
   // TODO: Implement your daily scheduled logic here
@@ -225,42 +236,48 @@ export async function runImport() {
   }
 }
 
-
-
 /**
- * Determine which users are not wearing their devices
+ * Enhanced validation function that tracks comprehensive missing data across all data types
  */
-export async function runUsageValidation() {
+export async function runComprehensiveUsageValidation() {
   try {
     // Get all user data
     const data = await getAllUserData();
 
     if (!data) {
-      console.error('No user data found when trying to get users for usage validation');
+      console.error('No user data found when trying to get users for comprehensive usage validation');
       return;
     }
 
-    let dateNotUsedObj: NotWearingDatesByUser = {}
-    let currObj: NotWearingDatesByUser | null;
-
+    let missingDataByUser: MissingDataByUser = {}
+    let userMissingData: MissingDataRow[] | null;
 
     // Process data for each user
     for (const userData of data) {
-      currObj = await getUsageObject(userData, dateNotUsedObj)
-      if (currObj) {
-        dateNotUsedObj = currObj
+      userMissingData = await getComprehensiveUsageObject(userData)
+      if (userMissingData) {
+        missingDataByUser[userData.user_id] = userMissingData
       }
     }
 
-    const rows = build2DArray(dateNotUsedObj)
+    const allMissingData = buildComprehensiveMissingDataArray(missingDataByUser)
 
-    const rowsInserted = await insertMissingUsage(rows)
+    const rowsInserted = await insertComprehensiveMissingData(allMissingData)
 
     if (!rowsInserted) {
-      console.error("Error, no rows were found")
+      console.log("No comprehensive missing data rows were found - all data appears to be present")
     }
     else {
-      const rowsForCSV = rowsInserted.rows.map(row => [row.user_id, row.date_not_wearing])
+      console.log(`Successfully inserted ${rowsInserted.rowCount} comprehensive missing data records`)
+      
+      // Create CSV export for newly discovered missing data
+      const rowsForCSV = rowsInserted.rows.map(row => [
+        row.user_id, 
+        row.date_missing, 
+        row.missing_activity ? 'true' : 'false',
+        row.missing_sleep ? 'true' : 'false', 
+        row.missing_hrv ? 'true' : 'false'
+      ])
     
       csv.stringify(
         rowsForCSV,
@@ -268,45 +285,24 @@ export async function runUsageValidation() {
           if (err) throw err;
           notWearingDevice.attachments = [
             {
-              filename: 'data.csv',
-              content: output // can also use Buffer.from(output)
+              filename: 'missing_data.csv',
+              content: output
             }
           ]
           
           transporter.sendMail(notWearingDevice, (err, info) => {
             if (err) console.error(err);
-            else console.log('Email sent:', info.response);
+            else console.log('Comprehensive missing data email sent:', info.response);
           });
         }
-      );  
+      );
     }
   } catch (err) {
     throw err;
   }
-
 }
 
 
 
-async function runGetNotWearingDevice() {
-  
-  try {
-    const result = await executeQuery<NotWearingRow>(`
-      SELECT user_id, date_not_wearing
-      FROM not_wearing_device
-      `, [])
 
 
-    if (result.rowCount === 0) {
-      console.log({
-        source: 'pool-select',
-        message: "No users found",
-      });
-      return null;
-    }
-
-    return result.rows ?? [];
-  } catch (err) {
-    throw err;
-  }
-}

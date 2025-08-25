@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
-import { runImport, runUsageValidation } from './utils/scheduled';
+import { runImport, runComprehensiveUsageValidation } from './utils/scheduled';
 import { dataDump, sendEmail } from './utils/email';
 import crypto from 'crypto';
 import { config } from './config';
@@ -125,7 +125,7 @@ cron.schedule(config.cron.import, async () => {
 
 cron.schedule(config.cron.usageValidation, async () => {
   try {
-    await runUsageValidation();
+    await runComprehensiveUsageValidation();
   } catch (err) {
     console.error('Scheduled job error:', err);
   }
