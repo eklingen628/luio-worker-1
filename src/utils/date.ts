@@ -68,3 +68,10 @@ export function genDates(limitRange: boolean, startDate: string, endDate?: strin
 
 	return days;
 }
+
+
+
+export function checkDate(firstAdded: string, date: string) {
+	return new Date(date).getTime() >= new Date(firstAdded).getTime()
+
+}
