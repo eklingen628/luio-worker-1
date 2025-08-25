@@ -81,6 +81,8 @@ app.get('/callback', async (req: Request, res: Response) => {
     });
   
     if (!fitbitRes.ok) {
+      const errorText = await fitbitRes.text(); // <-- log this
+      console.error('Fitbit token endpoint error:', fitbitRes.status, errorText); // <--- log it
       return res.status(400).send('Error in Token Message received');
     }
   
