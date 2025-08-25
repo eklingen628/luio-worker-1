@@ -71,7 +71,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
         ARRAY_AGG(DISTINCT date_queried::text ORDER BY date_queried::text),
         '{}'
       ) AS date_list
-      FROM hrv_data
+      FROM hrv_summary
       WHERE user_id = $1   
       `, [user_id]);
 
