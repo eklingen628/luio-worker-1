@@ -280,36 +280,31 @@ export async function runComprehensiveUsageValidation() {
       // Create CSV export for newly discovered missing data
       const rowsForCSV = rowsInserted.rows.map(row => [
         row.user_id, 
-        row.date_missing, 
+        new Date(row.date_missing).toISOString().split('T')[0], // Convert to YYYY-MM-DD
         row.missing_activity ? 'true' : 'false',
         row.missing_sleep ? 'true' : 'false', 
         row.missing_hrv ? 'true' : 'false'
       ])
     
       console.log("About to call csv.stringify");
-      csv.stringify(
-        rowsForCSV,
-        async (err, output) => {
-          if (err) {
-            console.error('Failed to generate CSV for missing data:', err);
-            return;
-          }
-          
-          notWearingDevice.attachments = [
-            {
-              filename: 'missing_data.csv',
-              content: output
-            }
-          ]
-          
-          try {
-            await sendEmail(notWearingDevice);
-            console.log('Comprehensive missing data email sent successfully');
-          } catch (error) {
-            console.error('Failed to send email:', error);
-          }
+      // Create CSV manually
+      const csvHeader = 'user_id,date_missing,missing_activity,missing_sleep,missing_hrv\n';
+      const csvRows = rowsForCSV.map(row => row.join(',')).join('\n');
+      const csvContent = csvHeader + csvRows;
+
+      notWearingDevice.attachments = [
+        {
+          filename: 'missing_data.csv',
+          content: csvContent
         }
-      );
+      ];
+
+      try {
+        await sendEmail(notWearingDevice);
+        console.log('Email sent successfully!');
+      } catch (error) {
+        console.error('Failed to send email:', error);
+      }
     }
   } catch (err) {
     throw err;
