@@ -289,14 +289,12 @@ export async function runComprehensiveUsageValidation() {
       console.log("About to call csv.stringify");
       csv.stringify(
         rowsForCSV,
-        (err, output) => {
-          console.log("CSV callback executed");
+        async (err, output) => {
           if (err) {
-            console.log('Failed to generate CSV for missing data:', err);
-            console.log("CSV err:", err);
-            console.log("CSV output length:", output?.length);
+            console.error('Failed to generate CSV for missing data:', err);
             return;
           }
+          
           notWearingDevice.attachments = [
             {
               filename: 'missing_data.csv',
@@ -304,10 +302,12 @@ export async function runComprehensiveUsageValidation() {
             }
           ]
           
-          transporter.sendMail(notWearingDevice, (err, info) => {
-            if (err) console.log(err);
-            else console.log('Comprehensive missing data email sent:', info.response);
-          });
+          try {
+            await sendEmail(notWearingDevice);
+            console.log('Comprehensive missing data email sent successfully');
+          } catch (error) {
+            console.error('Failed to send email:', error);
+          }
         }
       );
     }
