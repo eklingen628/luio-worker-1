@@ -52,7 +52,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
         '{}'
       ) AS date_list
       FROM daily_activity_summary
-      WHERE user_id = $1   
+      WHERE user_id = $1 AND steps > 250 AND resting_heart_rate IS NOT NULL 
       `, [user_id]);
 
     // Check sleep data  
@@ -286,11 +286,15 @@ export async function runComprehensiveUsageValidation() {
         row.missing_hrv ? 'true' : 'false'
       ])
     
+      console.log("About to call csv.stringify");
       csv.stringify(
         rowsForCSV,
         (err, output) => {
+          console.log("CSV callback executed");
           if (err) {
-            console.error('Failed to generate CSV for missing data:', err);
+            console.log('Failed to generate CSV for missing data:', err);
+            console.log("CSV err:", err);
+            console.log("CSV output length:", output?.length);
             return;
           }
           notWearingDevice.attachments = [
@@ -301,7 +305,7 @@ export async function runComprehensiveUsageValidation() {
           ]
           
           transporter.sendMail(notWearingDevice, (err, info) => {
-            if (err) console.error(err);
+            if (err) console.log(err);
             else console.log('Comprehensive missing data email sent:', info.response);
           });
         }
