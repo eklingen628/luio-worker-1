@@ -24,25 +24,32 @@ app.get(['/', '/index.html'], (req: Request, res: Response) => {
 
 app.get('/auth', async (req: Request, res: Response) => {
 
-  const { code_verifier, code_challenge } = await generatePKCE();
+  try {
 
-  const state = crypto.randomUUID()
+    const { code_verifier, code_challenge } = await generatePKCE();
 
-  await insertState(state, code_verifier)
+    const state = crypto.randomUUID()
 
-  const fitbitAuthUrl = new URL('https://www.fitbit.com/oauth2/authorize');
+    await insertState(state, code_verifier)
 
-  fitbitAuthUrl.searchParams.set('client_id', config.fitbit.clientId);
-  fitbitAuthUrl.searchParams.set('response_type', 'code');
-  fitbitAuthUrl.searchParams.set('scope', config.fitbit.scopes);
-  fitbitAuthUrl.searchParams.set('redirect_uri', config.fitbit.redirectUri);
-  fitbitAuthUrl.searchParams.set('code_challenge', code_challenge);
-  fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
-  fitbitAuthUrl.searchParams.set('state', state)
+    const fitbitAuthUrl = new URL('https://www.fitbit.com/oauth2/authorize');
 
-  console.log(fitbitAuthUrl.toString());
-  // Redirect to Fitbit authorization URL
-  res.redirect(fitbitAuthUrl.toString());
+    fitbitAuthUrl.searchParams.set('client_id', config.fitbit.clientId);
+    fitbitAuthUrl.searchParams.set('response_type', 'code');
+    fitbitAuthUrl.searchParams.set('scope', config.fitbit.scopes);
+    fitbitAuthUrl.searchParams.set('redirect_uri', config.fitbit.redirectUri);
+    fitbitAuthUrl.searchParams.set('code_challenge', code_challenge);
+    fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
+    fitbitAuthUrl.searchParams.set('state', state)
+
+    console.log(fitbitAuthUrl.toString());
+    // Redirect to Fitbit authorization URL
+    res.redirect(fitbitAuthUrl.toString());
+
+  } catch (error) {
+    console.error('Error in auth processing:', error);
+    res.status(500).send('Authentication initialization failed.');
+  }
 });
 
 app.get('/callback', async (req: Request, res: Response) => {
