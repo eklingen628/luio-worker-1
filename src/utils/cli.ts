@@ -8,19 +8,19 @@ import { runComprehensiveUsageValidation } from './scheduled';
 
 
 
-async function getDataOnDemand() {
-  const userId = process.argv[3];
-  const config = process.argv[4] as ConfigType | 'all';
-  const startDate = process.argv[5];
-  const endDate = process.argv[6] || undefined; 
+async function checkCLIDataConfig(argv: string[]) {
+  const userId = argv[3];
+  const config = argv[4] as ConfigType | 'all';
+  const startDate = argv[5];
+  const endDate = argv[6] || undefined; 
   
   if (!userId || !startDate) {
     console.log('Usage: npm run cli get <userId> <config> <startDate> [endDate]');
-    console.log('Example: npm run cli get 12345 getSleep 01-15-2025');
-    console.log('Example: npm run cli get 12345 getSleep 01-15-2025 01-20-2025');
-    console.log('Example: npm run cli get all all 01-15-2025 01-20-2025');
+    console.log('Example: npm run cli get 12345 getSleep 2025-01-15');
+    console.log('Example: npm run cli get 12345 getSleep 2025-01-15 2025-01-20');
+    console.log('Example: npm run cli get all all 2025-01-15 2025-01-20');
     console.log('Valid Configs: ', ["all", ...SCOPE_ACTIONS].join(', '));
-    process.exit(1);
+    throw new Error("Bad config");
   }
 
   // Validate config type
@@ -28,15 +28,19 @@ async function getDataOnDemand() {
   if (!validConfigs.includes(config)) {
     console.error(`Invalid config type: ${config}`);
     console.log('Valid configs:', validConfigs.join(', '));
-    process.exit(1);
+    throw new Error("Bad config");
   }
 
-  const dates = genDates(true, startDate, endDate);
-
-  if (!dates) {
-    console.log(`No dates generated for user ${userId}`);
-    return;
+  return {
+    userId,
+    config,
+    startDate,
+    endDate
   }
+}
+
+   
+export async function processUserDataCLI(userId: string, dates: string[], config: ConfigType | "all") {
 
   try {
     // Handle case where userId is 'all'
@@ -62,21 +66,36 @@ async function getDataOnDemand() {
       await processUserData(userData, dates, config);
     }
   } catch (error) {
-    console.error('Error:', error);
-    process.exit(1);
+    console.error('Error trying to get user data via CLI:', error);
+    throw error;
   }
-    process.exit(0);
 }
 
 
-async function runOnDemand() {
+export function genDatesCLI(startDate: string, endDate: string | undefined) {
 
-  // console.log("Argv0: ",process.argv[0])
-  // console.log("Argv1: ",process.argv[1])
-  // console.log("Argv2: ",process.argv[2])
-  // console.log("Argv3: ",process.argv[3])
-
+  try {
   
+    const dates = genDates(true, startDate, endDate);
+  
+    if (!dates) {
+      throw new Error(`No dates were generated for start=${startDate}, end=${endDate}`);
+    }
+
+    return dates
+  } catch (error) {
+    console.error("Error while generating dates: ", error)
+    throw error;
+  }
+}
+
+
+
+
+
+
+
+async function runOnDemand() {
 
   const flag = process.argv[2];
 
@@ -92,9 +111,20 @@ async function runOnDemand() {
     console.log('Email send completed');
     process.exit(0);
   } else if (flag === 'get') {
-    await getDataOnDemand();
-    console.log('Data import completed');
-    process.exit(0);
+
+    try {
+      const {userId, config, startDate, endDate} = await checkCLIDataConfig(process.argv)
+      const dates = genDatesCLI(startDate, endDate) 
+      await processUserDataCLI(userId, dates, config)
+
+      console.log('Data import completed');
+      process.exit(0);
+
+    } catch (error) {
+      console.error("Error:", error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+    
   } else if (flag === 'validate') {
     try {
       await runComprehensiveUsageValidation();
@@ -116,6 +146,6 @@ async function runOnDemand() {
 
 
 
-
-
-runOnDemand();
+if (require.main === module) {
+  runOnDemand();
+}
