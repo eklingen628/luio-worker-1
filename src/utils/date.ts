@@ -1,10 +1,7 @@
 
-export function getQueryDate(refDate?: Date): string {
-	const milliFactor = 60 * 60 * 1000;
+export function getQueryDate(baseDate: Date): string {
 
 	//use either the reference date, or use day before's date
-	const nowUTC = new Date(Date.now());
-	const baseDate = refDate ?? new Date(nowUTC.getTime() - 24 * milliFactor);
 
 	const year = baseDate.getUTCFullYear();
 	const month = String(baseDate.getUTCMonth() + 1).padStart(2, '0');
@@ -23,7 +20,7 @@ export function getDateString(date: Date): string {
 	return `${month}-${day}-${year}`;
 }
 
-export function genDates(limitRange: boolean, startDate: string, endDate?: string): string[] | null {
+export function genDates(limitRange: boolean, startDate: (string | Date), endDate?: (string | Date | undefined)): string[] | null {
 	let sd = new Date(startDate);
 
 	//set hours to 0 on the date, to ensure 1 day increment works in the for loop
@@ -75,3 +72,21 @@ export function dateIsValid(firstAdded: string, date: string) {
 	return new Date(date).getTime() >= new Date(firstAdded).getTime()
 
 }
+
+
+
+// export function getUTCtoAdjustedDate(date: string | Date, offsetHours: number): Date {
+
+// 	const offset = offsetHours * 60 * 60 * 1000; // hours in milliseconds
+// 	const adjustedDate = new Date(date)
+// 	adjustedDate.setTime(adjustedDate.getTime() + offset)
+// 	return adjustedDate
+// }
+
+
+export function toCentral(date: Date): Date {
+	return new Date(
+	  date.toLocaleString("en-US", { timeZone: "America/Chicago" })
+	);
+  }
+  

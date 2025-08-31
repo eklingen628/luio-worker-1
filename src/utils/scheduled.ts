@@ -1,13 +1,12 @@
 import { getAllUserData } from '../data/user';
-import { genDates } from '../utils/date';
+import { genDates, toCentral } from '../utils/date';
 import { processUserData } from '../workflow/processors';
-import { transporter, scopeEmail, notWearingDevice, sendEmail } from './email';
+import { scopeEmail, notWearingDevice, sendEmail } from './email';
 import { validateScope } from './scope';
 import { executeQuery } from '../db/connection';
 import { FitBitUserIDData } from '../types';
-import { DatabaseError, QueryResult } from 'pg';
-import csv from 'csv'
-import fs from 'fs'
+import { QueryResult } from 'pg';
+
 
 
 
@@ -213,17 +212,9 @@ export async function runImport() {
       return;
     }
 
-    const endDate = new Date();
-    const startDate = new Date(endDate);
-    //set the start date to 3 days ago
-    startDate.setDate(startDate.getDate() - 3);
 
-    const dates = genDates(false, startDate.toDateString(), endDate.toISOString());
+    const dates = getDatesForScheduleImport();
 
-    if (!dates) {
-      console.log(`Error in generating dates startdate: ${startDate.toISOString()} enddate: ${endDate.toISOString()}`);
-      return;
-    }
 
     // Process data for each user
     for (const userData of data) {
@@ -313,5 +304,44 @@ export async function runComprehensiveUsageValidation() {
 
 
 
+
+
+
+export function getDatesForScheduleImport() {
+
+	try {
+
+    //Set the endDate as 1 day in the past, converted to CST time
+    //Set the startDate as 4 days in the past (3 days prior to start date)
+		const oneDayMilliseconds = 24 * 60 * 60 * 1000
+		let endDate = new Date()
+		endDate.setTime(endDate.getTime() - oneDayMilliseconds)
+		let startDate = new Date(endDate.getTime() - (oneDayMilliseconds * 2))
+
+    console.log(`Before conversion`)
+    console.log(`StartDate: ${startDate}`)
+    console.log(`EndDate: ${endDate}`)
+	
+		endDate = toCentral(endDate)
+		startDate = toCentral(startDate)
+	
+    console.log(`After conversion`)
+    console.log(`StartDate: ${startDate}`)
+    console.log(`EndDate: ${endDate}`)
+    //Generate array of date strings
+		const dates = genDates(false, startDate, endDate);
+	
+		if (!dates) {
+			console.log(`Error in generating dates startdate: ${startDate.toString()} enddate: ${endDate.toString()}`);
+			throw new Error("Dates are missing");
+		  }
+    
+    return dates
+
+	} catch (error) {
+		console.error("Error while generating dates: ", error)
+		throw error;
+	}
+}
 
 
