@@ -37,7 +37,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
   const {user_id, first_added} = userData;
 
   try {
-    const daysSinceAdded = genDates(false, first_added, new Date().toISOString())
+    const daysSinceAdded = genDates(false, first_added, getEndDateForUsageValidation())
     
     if (!daysSinceAdded) {
       console.log("Error getting dates")
@@ -277,7 +277,7 @@ export async function runComprehensiveUsageValidation() {
         row.missing_hrv ? 'true' : 'false'
       ])
     
-      console.log("About to call csv.stringify");
+
       // Create CSV manually
       const csvHeader = 'user_id,date_missing,missing_activity,missing_sleep,missing_hrv\n';
       const csvRows = rowsForCSV.map(row => row.join(',')).join('\n');
@@ -345,3 +345,19 @@ export function getDatesForScheduleImport() {
 }
 
 
+export function getEndDateForUsageValidation() {
+
+	try {
+		const oneDayMilliseconds = 24 * 60 * 60 * 1000
+		let endDate = new Date()
+		endDate.setTime(endDate.getTime() - oneDayMilliseconds)
+	
+		endDate = toCentral(endDate)
+    
+    return endDate
+
+	} catch (error) {
+		console.error("Error while generating dates: ", error)
+		throw error;
+	}
+}

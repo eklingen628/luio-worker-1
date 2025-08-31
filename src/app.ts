@@ -42,7 +42,7 @@ app.get('/auth', async (req: Request, res: Response) => {
     fitbitAuthUrl.searchParams.set('code_challenge_method', 'S256');
     fitbitAuthUrl.searchParams.set('state', state)
 
-    console.log(fitbitAuthUrl.toString());
+
     // Redirect to Fitbit authorization URL
     res.redirect(fitbitAuthUrl.toString());
 
