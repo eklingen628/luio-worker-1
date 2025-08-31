@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { executeQuery } from '../db/connection';
+import logger from '../logger/logger';
 
 type VerifierResult = {
 	code_verifier: string
@@ -44,7 +45,7 @@ export async function getVerifierString(state: string): Promise<string | null> {
 			[state]
 		)
 		if (result.rowCount === 0) {
-			console.log({
+			logger.info({
 				source: 'pool-delete-from-state',
 				message: "No state found or state expired",
 			});

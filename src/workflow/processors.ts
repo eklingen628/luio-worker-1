@@ -5,6 +5,7 @@ import { FitBitUserIDData } from '../types';
 import { ConfigType, DATA_HANDLERS, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { pool } from '../db/connection';
 import { dateIsValid } from '../utils/date';
+import logger from '../logger/logger';
 
 
 
@@ -62,36 +63,36 @@ export async function processUserDataForDateAndAction(
     const handler = DATA_HANDLERS[action];
 
     if (!handler) {
-      console.log(`Error getting handler for ${action}`)
+      logger.info(`Error getting handler for ${action}`)
       return
     }
     
     if (!dateIsValid(userData.first_added, dateQueried)) {
-      console.log(`Error, the date queried ${dateQueried} is earlier than the date the user was first added ${userData.first_added}. Cancelling query.`)
+      logger.info(`Error, the date queried ${dateQueried} is earlier than the date the user was first added ${userData.first_added}. Cancelling query.`)
       return
     }
 
     const queriedData = await getData(userData, action, dateQueried);
 
     if (!queriedData) {
-      console.log(`No data returned for ${action} on ${dateQueried} for user ${userData.user_id}`);
+      logger.info(`No data returned for ${action} on ${dateQueried} for user ${userData.user_id}`);
       return;
     }
 
-    console.log(`Processing ${action} data for user ${userData.user_id} on ${dateQueried}`);
+    logger.info(`Processing ${action} data for user ${userData.user_id} on ${dateQueried}`);
     
 
     
     if (handler.checkFitbitAPIType(queriedData.dataFromQuery)) {
       await handler.insert(queriedData.dataFromQuery, dateQueried, userData.user_id, userData.first_added);
     } else {
-      console.log(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
-      console.log(queriedData.dataFromQuery)
+      logger.info(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
+      logger.info(queriedData.dataFromQuery)
     }
   } catch (err) {
     // Handle token expiration
     if (err instanceof TokenExpiredError) {
-      console.log("Token expired, refreshing and retrying...");
+      logger.info("Token expired, refreshing and retrying...");
       
       try {
         // Refresh token to get new token data
@@ -114,7 +115,7 @@ export async function processUserDataForDateAndAction(
           await client.query('COMMIT');
           
           if (!updatedUserData) {
-            console.log("Failed to get updated user data after token refresh");
+            logger.info("Failed to get updated user data after token refresh");
             return;
           }
 
@@ -122,18 +123,18 @@ export async function processUserDataForDateAndAction(
           const retryData = await getData(updatedUserData, action, dateQueried);
           
           if (!retryData) {
-            console.log(`Retry failed for ${action} on ${dateQueried} for user ${userData.user_id}`);
+            logger.info(`Retry failed for ${action} on ${dateQueried} for user ${userData.user_id}`);
             return;
           }
 
-          console.log(`Processing ${action} data for user ${userData.user_id} on ${dateQueried} (retry)`);
+          logger.info(`Processing ${action} data for user ${userData.user_id} on ${dateQueried} (retry)`);
           
           const handler = DATA_HANDLERS[action];
           if (handler && handler.checkFitbitAPIType(retryData.dataFromQuery)) {
             await handler.insert(retryData.dataFromQuery, dateQueried, userData.user_id, userData.first_added);
           } else {
-            console.log(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
-            console.log(retryData.dataFromQuery)
+            logger.info(`Type mismatch for ${action} data - expected data type not found. The following data was found:`);
+            logger.info(retryData.dataFromQuery)
           }
           
           // Return the updated user data so it can be used for subsequent actions

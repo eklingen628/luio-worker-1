@@ -1,3 +1,5 @@
+import logger from "../logger/logger";
+
 
 export function getQueryDate(baseDate: Date): string {
 
@@ -42,13 +44,13 @@ export function genDates(limitRange: boolean, startDate: (string | Date), endDat
 	let diff = (ed.getTime() - sd.getTime()) / milliConvert;
 
 	if (ed < sd) {
-		console.log('Error, end date is before start date. Exiting.');
+		logger.info('Error, end date is before start date. Exiting.');
 		return null;
 	} else if (diff < 1) {
-		console.log('Error, inputted dates must be at least 1 day apart. Exiting.');
+		logger.info('Error, inputted dates must be at least 1 day apart. Exiting.');
 		return null;
 	} else if (limitRange && diff > 31) {
-		console.log('Error, cannot support more than 31 days of range. Exiting.');
+		logger.info('Error, cannot support more than 31 days of range. Exiting.');
 		return null;
 	} else {
 		days.push(getQueryDate(sd));

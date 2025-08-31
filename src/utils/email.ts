@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { getDateString } from './date';
 import { config } from '../config';
+import logger from '../logger/logger';
 
 
 
@@ -78,7 +79,7 @@ export async function getFileDump() {
         const currentDir = path.join(parentDir,`dump_${getDateString(new Date())}.zip`);
         //check if the directory exists
         if (!fs.existsSync(currentDir)) {
-            console.log('No file dump found for directory: ', currentDir);
+            logger.info('No file dump found for directory: ', currentDir);
             throw new Error('No file dump found for directory: ' + currentDir);
         }
         // const fullFilePaths = fs.readdirSync(currentDir).map(file => path.join(currentDir, file));
@@ -105,7 +106,7 @@ export async function sendEmail(emailOptions: EmailOptions) {
         // Handle data dump emails with file attachments
         if (emailOptions.subject.includes("AUTOMATED EMAIL -- DATA DUMP") && !emailOptions.subject.includes("ERROR")) {
 
-            console.log(new Date().toISOString(), 'Sending data dump email');
+            logger.info(new Date().toISOString(), 'Sending data dump email');
             try {
                 const files = await getFileDump();
                 emailOptions.attachments = files.map(file => ({

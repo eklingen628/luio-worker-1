@@ -33,8 +33,6 @@ const logger = createLogger({
   ],
 });
 
-logger.info("yo here's some info")
-
 
 export default logger;
 

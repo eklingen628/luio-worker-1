@@ -9,6 +9,7 @@ import { runImport, runComprehensiveUsageValidation } from './utils/scheduled';
 import { dataDump, sendEmail } from './utils/email';
 import crypto from 'crypto';
 import { config } from './config';
+import logger from './logger/logger';
 
 const app = express();
 const PORT = config.port;
@@ -143,5 +144,5 @@ cron.schedule(config.cron.usageValidation, async () => {
 
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 }); 

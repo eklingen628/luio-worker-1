@@ -1,5 +1,6 @@
 import { executeQuery } from "../db/connection";
 import { ActivityLogListResponse, ActivityStepsIntradayResponse } from "../types";
+import logger from "../logger/logger";
 
 export async function insertActivityData(
 	data: any,
@@ -56,7 +57,7 @@ export async function insertActivityData(
 		// Insert activities (schema unknown at this time)
 		if (Array.isArray(activities) && activities.length > 0) {
 			// TODO: Implement activities insertion when schema is known
-			console.log(`Found ${activities.length} activities for user ${user_id} on ${dateQueried}`);
+			logger.info(`Found ${activities.length} activities for user ${user_id} on ${dateQueried}`);
 		}
 
 		// Insert distances
@@ -141,7 +142,7 @@ export async function insertStepsIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertStepsIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -218,7 +219,7 @@ export async function insertActivityLogList(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertActivityLogList',
 			message: (err as Error).message,
 			stack: (err as Error).stack,

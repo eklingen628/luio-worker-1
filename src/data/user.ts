@@ -1,6 +1,7 @@
 import { executeQuery } from '../db/connection';
 import { UserToken, FitBitUserIDData } from '../types';
 import { PoolClient } from 'pg';
+import logger from '../logger/logger';
 
 export async function insertUserData(data: UserToken, client?: PoolClient): Promise<null> {
 
@@ -45,7 +46,7 @@ export async function getAllUserData(): Promise<FitBitUserIDData[] | null> {
 	const result = await executeQuery<FitBitUserIDData>('SELECT * FROM fitbit_users', []);
 
 	if (result.rowCount === 0) {
-		console.log({
+		logger.info({
 			source: 'pool-select',
 			message: "No users found",
 		});
@@ -67,7 +68,7 @@ export async function getOneUserData(userId: string, client?: PoolClient): Promi
 		}
 		
 		if (result.rowCount === 0) {
-			console.log({
+			logger.info({
 				source: 'pool-select',
 				message: "No user found",
 			});

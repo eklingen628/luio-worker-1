@@ -1,5 +1,6 @@
 import { executeQuery } from '../db/connection';
-import { SleepApiResponse } from '../types';  
+import { SleepApiResponse } from '../types';
+import logger from '../logger/logger';  
 
 export async function insertSleepData(
   data: SleepApiResponse,
@@ -131,7 +132,7 @@ export async function insertSleepData(
     return null;
 
   } catch (err) {
-    console.log({
+    logger.info({
       source: 'insertSleepData',
       message: (err as Error).message,
       stack: (err as Error).stack,

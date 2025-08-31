@@ -1,5 +1,6 @@
 import { executeQuery } from '../db/connection';
 import { HeartRateZone, HeartApiResponse, HrvResponse, HeartRateIntradayResponse, HrvIntradayResponse } from '../types';
+import logger from '../logger/logger';
 
 export async function insertHRTimeSeries(
 	data: HeartApiResponse,
@@ -54,11 +55,11 @@ export async function insertHRTimeSeries(
 			}
 		}
 
-		console.log(`Successfully inserted heart rate data for user ${user_id} on ${dateQueried}`);
+		logger.info(`Successfully inserted heart rate data for user ${user_id} on ${dateQueried}`);
 		return null;
 
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertHeartData',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -96,7 +97,7 @@ export async function insertHRVData(
 		return null;
 
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertHRVData',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -126,7 +127,7 @@ export async function insertHeartIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertHeartIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -159,7 +160,7 @@ export async function insertHRVIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		logger.info({
 			source: 'insertHRVIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,

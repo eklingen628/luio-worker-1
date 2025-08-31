@@ -1,5 +1,6 @@
 import { FitbitApiResponse, FitBitApiError, FitBitUserIDData } from "../types";
 import { ConfigType, DATA_HANDLERS } from "../handlers/dataHandlers";
+import logger from "../logger/logger";
 
 class TokenExpiredError extends Error {
 	constructor(public fitbitError: FitBitApiError) {
@@ -43,7 +44,7 @@ Promise<{
 } | null> {
 
 	if (!dateQueried || !data?.user_id || !data?.access_token) {
-		console.log("Missing required fields: dateQueried, user_id, or access_token");
+		logger.info("Missing required fields: dateQueried, user_id, or access_token");
 		return null;
 	}
 
@@ -64,7 +65,7 @@ Promise<{
 
 		// Handle other Fitbit API errors
 		if (err instanceof FitbitApiCallError) {
-			console.log(JSON.stringify({
+			logger.info(JSON.stringify({
 				source: "getData: " + config,
 				statusCode: err.statusCode,
 				errorType: err.fitbitError.errors?.[0]?.errorType,
@@ -74,7 +75,7 @@ Promise<{
 		}
 
 		// Handle unexpected errors
-		console.log(JSON.stringify({
+		logger.info(JSON.stringify({
 			source: "getData: " + config,
 			errorType: "unexpected_error",
 			message: (err as Error).message,

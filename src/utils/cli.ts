@@ -5,6 +5,7 @@ import { getOneUserData, getAllUserData } from '../data/user';
 import { ConfigType, SCOPE_ACTIONS } from '../handlers/dataHandlers';
 import { sendEmail, dataDump } from './email';
 import { runComprehensiveUsageValidation } from './scheduled';
+import logger from '../logger/logger';
 
 
 
@@ -15,11 +16,11 @@ async function checkCLIDataConfig(argv: string[]) {
   const endDate = argv[6] || undefined; 
   
   if (!userId || !startDate) {
-    console.log('Usage: npm run cli get <userId> <config> <startDate> [endDate]');
-    console.log('Example: npm run cli get 12345 getSleep 2025-01-15');
-    console.log('Example: npm run cli get 12345 getSleep 2025-01-15 2025-01-20');
-    console.log('Example: npm run cli get all all 2025-01-15 2025-01-20');
-    console.log('Valid Configs: ', ["all", ...SCOPE_ACTIONS].join(', '));
+    logger.info('Usage: npm run cli get <userId> <config> <startDate> [endDate]');
+    logger.info('Example: npm run cli get 12345 getSleep 2025-01-15');
+    logger.info('Example: npm run cli get 12345 getSleep 2025-01-15 2025-01-20');
+    logger.info('Example: npm run cli get all all 2025-01-15 2025-01-20');
+    logger.info('Valid Configs: ', ["all", ...SCOPE_ACTIONS].join(', '));
     throw new Error("Bad config");
   }
 
@@ -27,7 +28,7 @@ async function checkCLIDataConfig(argv: string[]) {
   const validConfigs: (ConfigType | 'all')[] = ["all", ...SCOPE_ACTIONS];
   if (!validConfigs.includes(config)) {
     console.error(`Invalid config type: ${config}`);
-    console.log('Valid configs:', validConfigs.join(', '));
+    logger.info('Valid configs:', validConfigs.join(', '));
     throw new Error("Bad config");
   }
 
@@ -47,7 +48,7 @@ export async function processUserDataCLI(userId: string, dates: string[], config
     if (userId === 'all') {
       const userData = await getAllUserData();
       if (!userData) {
-        console.log('No user data found');
+        logger.info('No user data found');
         return;
       }
       
@@ -59,7 +60,7 @@ export async function processUserDataCLI(userId: string, dates: string[], config
       // Handle single user
       const userData = await getOneUserData(userId);
       if (!userData) {
-        console.log('No user data found');
+        logger.info('No user data found');
         return;
       }
 
@@ -101,14 +102,14 @@ async function runOnDemand() {
 
   
   if (!flag) {
-    console.log('Invalid. You must provide a flag.');
-    console.log('Valid flags: email, get, validate');
+    logger.info('Invalid. You must provide a flag.');
+    logger.info('Valid flags: email, get, validate');
     process.exit(1);
   }
   
   if (flag === 'email') {
     await sendEmail(dataDump);
-    console.log('Email send completed');
+    logger.info('Email send completed');
     process.exit(0);
   } else if (flag === 'get') {
 
@@ -117,7 +118,7 @@ async function runOnDemand() {
       const dates = genDatesCLI(startDate, endDate) 
       await processUserDataCLI(userId, dates, config)
 
-      console.log('Data import completed');
+      logger.info('Data import completed');
       process.exit(0);
 
     } catch (error) {
@@ -128,15 +129,15 @@ async function runOnDemand() {
   } else if (flag === 'validate') {
     try {
       await runComprehensiveUsageValidation();
-      console.log('Usage validation completed');
+      logger.info('Usage validation completed');
       process.exit(0);
     } catch (err) {
       console.error('Validation error:', err);
       process.exit(1);
     }
   } else {
-    console.log('Invalid flag.');
-    console.log('Valid flags: email, get, validate');
+    logger.info('Invalid flag.');
+    logger.info('Valid flags: email, get, validate');
     process.exit(1);
   }
 }

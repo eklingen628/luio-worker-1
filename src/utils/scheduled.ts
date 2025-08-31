@@ -6,6 +6,7 @@ import { validateScope } from './scope';
 import { executeQuery } from '../db/connection';
 import { FitBitUserIDData } from '../types';
 import { QueryResult } from 'pg';
+import logger from '../logger/logger';
 
 
 
@@ -40,7 +41,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     const daysSinceAdded = genDates(false, first_added, new Date().toISOString())
     
     if (!daysSinceAdded) {
-      console.log("Error getting dates")
+      logger.info("Error getting dates")
       return null;
     }
 
@@ -102,7 +103,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
 
 
   } catch (err) {
-    console.log({
+    logger.info({
       source: 'getComprehensiveUsageObject',
       message: (err as Error).message,
       stack: (err as Error).stack,
@@ -158,7 +159,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
 
   try {
     if (!rows || rows.length === 0) {
-      console.log({
+      logger.info({
         source: 'insertComprehensiveMissingData',
         message: 'No rows provided for insertion'
       });
@@ -177,7 +178,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
 
     
     if (rowsInserted.rowCount === 0) {
-      console.log({
+      logger.info({
         source: 'insert-comprehensive-missing-data',
         message: "No missing data rows were inserted",
       });
@@ -187,7 +188,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
     return rowsInserted;
   
   } catch (err) {
-    console.log({
+    logger.info({
       source: 'insertComprehensiveMissingData',
       message: (err as Error).message,
       stack: (err as Error).stack,
@@ -200,7 +201,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
 export async function runImport() {
   // TODO: Implement your daily scheduled logic here
   // Example: Query users, refresh tokens, fetch/insert data, etc.
-  console.log('Running scheduled import...');
+  logger.info('Running scheduled import...');
 
 
   try {
@@ -221,9 +222,9 @@ export async function runImport() {
       const scopeResults = validateScope(userData);
 
       if (!scopeResults.allScopesPresent) {
-        console.log(`User ${userData.user_id} has missing scopes: ${scopeResults.missingScopes.join(', ')}. Email was sent.`);
+        logger.info(`User ${userData.user_id} has missing scopes: ${scopeResults.missingScopes.join(', ')}. Email was sent.`);
         const sentMessageInfo = await sendEmail(scopeEmail);
-        console.log(`Sent message info: ${sentMessageInfo}`);
+        logger.info(`Sent message info: ${sentMessageInfo}`);
         continue;
       }
       
@@ -263,10 +264,10 @@ export async function runComprehensiveUsageValidation() {
     const rowsInserted = await insertComprehensiveMissingData(allMissingData)
 
     if (!rowsInserted) {
-      console.log("No comprehensive missing data rows were found - all data appears to be present")
+      logger.info("No comprehensive missing data rows were found - all data appears to be present")
     }
     else {
-      console.log(`Successfully inserted ${rowsInserted.rowCount} comprehensive missing data records`)
+      logger.info(`Successfully inserted ${rowsInserted.rowCount} comprehensive missing data records`)
       
       // Create CSV export for newly discovered missing data
       const rowsForCSV = rowsInserted.rows.map(row => [
@@ -292,7 +293,7 @@ export async function runComprehensiveUsageValidation() {
 
       try {
         await sendEmail(notWearingDevice);
-        console.log('Email sent successfully!');
+        logger.info('Email sent successfully!');
       } catch (error) {
         console.error('Failed to send email:', error);
       }
@@ -318,21 +319,15 @@ export function getDatesForScheduleImport() {
 		endDate.setTime(endDate.getTime() - oneDayMilliseconds)
 		let startDate = new Date(endDate.getTime() - (oneDayMilliseconds * 2))
 
-    console.log(`Before conversion`)
-    console.log(`StartDate: ${startDate}`)
-    console.log(`EndDate: ${endDate}`)
 	
 		endDate = toCentral(endDate)
 		startDate = toCentral(startDate)
-	
-    console.log(`After conversion`)
-    console.log(`StartDate: ${startDate}`)
-    console.log(`EndDate: ${endDate}`)
+
     //Generate array of date strings
 		const dates = genDates(false, startDate, endDate);
 	
 		if (!dates) {
-			console.log(`Error in generating dates startdate: ${startDate.toString()} enddate: ${endDate.toString()}`);
+			logger.info(`Error in generating dates startdate: ${startDate.toString()} enddate: ${endDate.toString()}`);
 			throw new Error("Dates are missing");
 		  }
     

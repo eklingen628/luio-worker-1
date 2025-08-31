@@ -1,5 +1,6 @@
 import { UserToken, FitBitUserIDData } from "../types";
 import { config } from "../config"
+import logger from "../logger/logger";
 
 export async function refreshToken(userData: FitBitUserIDData): Promise<UserToken> {
   const tokenURL = new URL("https://api.fitbit.com/oauth2/token");
@@ -29,7 +30,7 @@ export async function refreshToken(userData: FitBitUserIDData): Promise<UserToke
 
     const refresh = await res.json() as UserToken;
     
-    console.log("Token refreshed successfully for user:", refresh.user_id);
+    logger.info("Token refreshed successfully for user:", refresh.user_id);
     return refresh;
 
   } catch (err: any) {
