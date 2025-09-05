@@ -28,7 +28,9 @@ export const config = {
   },
   cron: {
     import: process.env.CRON_IMPORT!,
-    usageValidation: process.env.CRON_USAGE_VAL!
+    usageValidation: process.env.CRON_USAGE_VAL!,
+    importDaysPriorToToday: Number(process.env.CRON_IMPORT_DAYS_PRIOR_TO_TODAY ?? 1),  //probably just set to 0 or 1. If set to 0, just look at yesterday's data
+    importNumDaysToImport: Number(process.env.CRON_NUM_DAYS_TO_IMPORT ?? 2), // the number of days to import for
   },
   email: {
     user: process.env.EMAIL_USER!,
@@ -41,3 +43,4 @@ export const config = {
   logDir: process.env.LOG_DIR!,
   port: 3000
 };
+ 

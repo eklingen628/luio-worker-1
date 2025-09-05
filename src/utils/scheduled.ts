@@ -6,6 +6,7 @@ import { validateScope } from './scope';
 import { executeQuery } from '../db/connection';
 import { FitBitUserIDData } from '../types';
 import { QueryResult } from 'pg';
+import { config } from '../config';
 
 
 
@@ -315,8 +316,8 @@ export function getDatesForScheduleImport() {
     //Set the startDate as 4 days in the past (3 days prior to start date)
 		const oneDayMilliseconds = 24 * 60 * 60 * 1000
 		let endDate = new Date()
-		endDate.setTime(endDate.getTime() - oneDayMilliseconds)
-		let startDate = new Date(endDate.getTime() - (oneDayMilliseconds * 2))
+		endDate.setTime(endDate.getTime() - oneDayMilliseconds * config.cron.importDaysPriorToToday)
+		let startDate = new Date(endDate.getTime() - (oneDayMilliseconds * (config.cron.importNumDaysToImport - 1)))
 
     console.log(`Before conversion`)
     console.log(`StartDate: ${startDate}`)

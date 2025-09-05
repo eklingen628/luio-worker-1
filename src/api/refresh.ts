@@ -40,17 +40,4 @@ export async function refreshToken(userData: FitBitUserIDData): Promise<UserToke
 
 
 
-//replace with types from supabase?
-export function calcTimeToRefresh(userData: FitBitUserIDData, interval: number) {
-
-	const timeMilli = (interval * 1.5 * 60 * 60 * 1000)
-
-	const dateTimeFuture = new Date(Date.now() + timeMilli)
-	const expiry = userData.expires_at ? new Date(userData.expires_at) : new Date();
-
-	// if the expiration occurs prior to the defined future date
-	return expiry < dateTimeFuture;
-
-		
-}
 
