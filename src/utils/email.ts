@@ -2,9 +2,11 @@ import nodemailer from 'nodemailer'
 import { splitData } from './scope';
 import path from 'path';
 import fs from 'fs';
-import { getDateString } from './date';
+import { getDateString, toCentral } from './date';
 import { config } from '../config';
 
+
+const dataDumpDate = getDateString(toCentral(new Date()))
 
 
 type EmailOptions = {
@@ -44,7 +46,7 @@ export const notWearingDevice: EmailOptions = {
 export const dataDump: EmailOptions = {
     from: config.email.user ?? '',
     to: config.email.user ?? '',
-    subject: `AUTOMATED EMAIL -- DATA DUMP ${getDateString(new Date())}`,
+    subject: `AUTOMATED EMAIL -- DATA DUMP ${dataDumpDate}`,
     text: `Data dump.`,
     attachments: []
 }
@@ -75,7 +77,7 @@ const parentDir = config.dataDumpDir;
 export async function getFileDump() {
 
     try {
-        const currentDir = path.join(parentDir,`dump_${getDateString(new Date())}.zip`);
+        const currentDir = path.join(parentDir,`dump_${dataDumpDate}.zip`);
         //check if the directory exists
         if (!fs.existsSync(currentDir)) {
             console.log('No file dump found for directory: ', currentDir);
