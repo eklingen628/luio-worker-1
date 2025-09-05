@@ -69,9 +69,16 @@ export function genDates(limitRange: boolean, startDate: (string | Date), endDat
 
 
 export function dateIsValid(firstAdded: string, date: string) {
-	return new Date(date).getTime() >= new Date(firstAdded).getTime()
-
-}
+	const d1 = new Date(firstAdded)
+	const d2 = new Date(date)
+  
+	const sameDay =
+	  d1.getFullYear() === d2.getFullYear() &&
+	  d1.getMonth() === d2.getMonth() &&
+	  d1.getDate() === d2.getDate()
+  
+	return d2.getTime() >= d1.getTime() || sameDay
+  }
 
 
 
