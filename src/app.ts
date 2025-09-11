@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { generatePKCE, getVerifierString, insertState } from './api/auth';
-import cookieParser from 'cookie-parser';
 import cron from 'node-cron';
 import { UserToken } from './types';
 import { insertUserData } from './data/user';
@@ -15,7 +14,7 @@ const PORT = config.port;
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(cookieParser());
+
 
 // Serve login.html at / and /login.html
 app.get(['/', '/index.html'], (req: Request, res: Response) => {
