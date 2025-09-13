@@ -11,7 +11,8 @@ import { config } from './config';
 import { executeQuery } from './db/connection';
 
 const app = express();
-const PORT = config.port;
+const PORTBACK = config.port.portBackend;
+const PORTFRONT = config.port.portFrontend;
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
@@ -383,6 +384,10 @@ app.get("/api/user", async (req, res) => {
 
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORTBACK, () => {
+  console.log(`Server running on port ${PORTBACK}`);
+}); 
+
+app.listen(PORTFRONT, () => {
+  console.log(`Server running on port ${PORTFRONT}`);
 }); 

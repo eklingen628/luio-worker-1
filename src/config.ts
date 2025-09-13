@@ -41,6 +41,9 @@ export const config = {
   dbURL: process.env.DATABASE_URL!,
   dataDumpDir: process.env.DATA_DUMP_DIR!,
   logDir: process.env.LOG_DIR!,
-  port: 3000
+  port: {
+    portBackend: 3000,
+    portFrontend: 4000,
+  }
 };
  
