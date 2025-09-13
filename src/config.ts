@@ -9,7 +9,7 @@ const requiredEnvVars = [
   'CRON_IMPORT',
   'CRON_USAGE_VAL',
   'DATABASE_URL',
-  'LOG_DIR'
+  // 'LOG_DIR'
 ];
 
 // Validate required environment variables
