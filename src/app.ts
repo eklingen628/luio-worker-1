@@ -318,25 +318,25 @@ WITH stage_intervals AS (
     LEAD(date_time) OVER (
       PARTITION BY user_id, log_id
       ORDER BY date_time
-    )           AS next_stage_time
+    ) AS next_stage_time
   FROM sleep_levels_combined
   WHERE user_id = $1
     AND date_queried = $2
 )
 SELECT
   s.stage,
-  s.start_time,
-  COALESCE(s.next_stage_time, l.end_time) AS end_time,
-ROUND(
-  EXTRACT(EPOCH FROM (COALESCE(s.next_stage_time, l.end_time) - s.start_time)) / 60,
-  1
-) AS duration_minutes
+  s.start_time AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS start_time,
+  COALESCE(s.next_stage_time, l.end_time) AT TIME ZONE 'UTC' AT TIME ZONE 'America/Chicago' AS end_time,
+  ROUND(
+    EXTRACT(EPOCH FROM (COALESCE(s.next_stage_time, l.end_time) - s.start_time)) / 60,
+    1
+  ) AS duration_minutes
 FROM stage_intervals s
 JOIN sleep_log l
   ON s.user_id = l.user_id
  AND s.log_id  = l.log_id
+WHERE l.is_main_sleep = true
 ORDER BY s.start_time;
-
 
 
 
@@ -388,6 +388,6 @@ app.listen(PORTBACK, () => {
   console.log(`Server running on port ${PORTBACK}`);
 }); 
 
-app.listen(PORTFRONT, () => {
+app.listen(PORTFRONT, "127.0.0.1", () => {
   console.log(`Server running on port ${PORTFRONT}`);
 }); 
