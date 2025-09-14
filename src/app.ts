@@ -116,30 +116,30 @@ app.get('/callback', async (req: Request, res: Response) => {
 
 
 
-// // Schedule to run once per day at 2:00 AM server time
-// cron.schedule(config.cron.import, async () => {
-//   try {
-//     await runImport();
-//   } catch (err) {
-//     console.error('Scheduled job error:', err);
-//   }
-// }, {
-//   timezone: 'UTC'
-// });
+// Schedule to run once per day at 2:00 AM server time
+cron.schedule(config.cron.import, async () => {
+  try {
+    await runImport();
+  } catch (err) {
+    console.error('Scheduled job error:', err);
+  }
+}, {
+  timezone: 'UTC'
+});
 
 
 
 
 
-// cron.schedule(config.cron.usageValidation, async () => {
-//   try {
-//     await runComprehensiveUsageValidation();
-//   } catch (err) {
-//     console.error('Scheduled job error:', err);
-//   }
-// }, {
-//   timezone: 'UTC'
-// });
+cron.schedule(config.cron.usageValidation, async () => {
+  try {
+    await runComprehensiveUsageValidation();
+  } catch (err) {
+    console.error('Scheduled job error:', err);
+  }
+}, {
+  timezone: 'UTC'
+});
 
 
 
