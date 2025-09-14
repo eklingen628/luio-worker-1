@@ -244,17 +244,17 @@ app.get("/api/users", async (req, res) => {
         ) AS pct_morning,
 
         ROUND(
-          COUNT(*) FILTER (WHERE time >= '12:00:00' AND time < '16:00:00') / 48.0 * 100,
+          COUNT(*) FILTER (WHERE time >= '12:00:00' AND time < '18:00:00') / 72.0 * 100,
           0
         ) AS pct_afternoon,
 
         ROUND(
-          COUNT(*) FILTER (WHERE time >= '16:00:00' AND time < '22:00:00') / 72.0 * 100,
+          COUNT(*) FILTER (WHERE time >= '18:00:00' AND time <= '23:59:59') / 72.0 * 100,
           0
         ) AS pct_evening,
 
         ROUND(
-          COUNT(*) FILTER (WHERE (time >= '22:00:00' OR time < '06:00:00')) / 96.0 * 100,
+          COUNT(*) FILTER (WHERE (time >= '00:00:00' AND time < '06:00:00')) / 72.0 * 100,
           0
         ) AS pct_night
       FROM heart_rate_intraday
