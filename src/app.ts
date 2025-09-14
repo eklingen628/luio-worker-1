@@ -380,6 +380,72 @@ app.get("/api/user", async (req, res) => {
 
 
 
+app.get("/api/aggregate", async (req, res) => {
+  const { id, date } = req.query;
+
+  const result = {
+    HRV: await getHRVAgg(),
+    sleep: await getSleepAgg(),
+    // steps: await getStepsAgg(),
+    // worn: await getWornAgg()
+
+  };
+
+    res.json(result);
+
+  
+});
+
+
+
+
+
+
+async function getHRVAgg() {
+  const result = await executeQuery(
+    `
+    SELECT 
+      c.date_queried,
+      u.user_id,
+      a.daily_rmssd
+    FROM calendar c
+    CROSS JOIN fitbit_users u
+    LEFT JOIN hrv_summary a
+      ON c.date_queried = a.date_queried
+    AND u.user_id = a.user_id
+    ORDER BY c.date_queried, u.user_id;
+    `
+    ,[]
+  )
+
+  return result.rows
+
+}
+
+
+
+async function getSleepAgg() {
+  const result = await executeQuery(
+    `
+    SELECT 
+      c.date_queried,
+      u.user_id,
+      s.efficiency
+    FROM calendar c
+    CROSS JOIN fitbit_users u
+    LEFT JOIN sleep_log s
+      ON c.date_queried = s.date_queried
+     AND u.user_id = s.user_id
+     AND s.is_main_sleep = true
+    ORDER BY c.date_queried, u.user_id;
+    `,
+    []
+  );
+
+  return result.rows;
+}
+
+
 
 
 
