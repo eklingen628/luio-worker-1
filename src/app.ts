@@ -361,7 +361,7 @@ app.get("/api/user", async (req, res) => {
   if (id && date) {
 
     if (typeof id !== "string" || typeof date !== "string") {
-      return res.status(400).send("id must be a string");
+      return res.status(400).send("id and date must be a string");
     }
     const result = {
       user_id: id,
@@ -386,8 +386,8 @@ app.get("/api/aggregate", async (req, res) => {
   const result = {
     HRV: await getHRVAgg(),
     sleep: await getSleepAgg(),
-    // steps: await getStepsAgg(),
-    // worn: await getWornAgg()
+    steps: await getStepsAgg(),
+    worn: await getWornAgg()
 
   };
 
@@ -446,6 +446,50 @@ async function getSleepAgg() {
 }
 
 
+async function getStepsAgg() {
+  const result = await executeQuery(
+    `
+    SELECT 
+      c.date_queried,
+      u.user_id,
+      d.steps
+    FROM calendar c
+    CROSS JOIN fitbit_users u
+    LEFT JOIN daily_activity_summary d
+      ON c.date_queried = d.date_queried
+     AND u.user_id = d.user_id
+    ORDER BY c.date_queried, u.user_id;
+    `,
+    []
+  );
+
+  return result.rows;
+}
+
+
+async function getWornAgg() {
+  const result = await executeQuery(
+    `
+    SELECT 
+      c.date_queried,
+      u.user_id,
+      ROUND(
+        COUNT(h.*)::numeric / 288 * 100, 
+        0
+      )::int AS pct_worn
+    FROM calendar c
+    CROSS JOIN fitbit_users u
+    LEFT JOIN heart_rate_intraday h
+      ON c.date_queried = h.date_queried
+     AND u.user_id = h.user_id
+    GROUP BY c.date_queried, u.user_id
+    ORDER BY c.date_queried, u.user_id;
+    `,
+    []
+  );
+
+  return result.rows;
+}
 
 
 
