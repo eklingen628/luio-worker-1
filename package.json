@@ -10,8 +10,10 @@
 		"refresh": "npm install && rm -rf dist && npm run build"
 	},
 	"devDependencies": {
+		"@types/bcrypt": "^6.0.0",
 		"@types/cookie-parser": "^1.4.9",
 		"@types/express": "^5.0.3",
+		"@types/jsonwebtoken": "^9.0.10",
 		"@types/nodemailer": "^6.4.17",
 		"@types/pg": "^8.15.4",
 		"ts-node": "^10.9.2",
@@ -19,9 +21,11 @@
 	},
 	"dependencies": {
 		"@dotenvx/dotenvx": "^1.48.3",
+		"bcrypt": "^6.0.0",
 		"cookie-parser": "^1.4.7",
 		"csv": "^6.4.1",
 		"express": "^5.1.0",
+		"jsonwebtoken": "^9.0.2",
 		"node-cron": "^4.2.1",
 		"nodemailer": "^7.0.5",
 		"pg": "^8.16.3",
