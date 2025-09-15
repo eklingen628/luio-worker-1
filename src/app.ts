@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import { generatePKCE, getVerifierString, insertState } from './api/auth';
 import cron from 'node-cron';
@@ -9,6 +9,8 @@ import { dataDump, sendEmail } from './utils/email';
 import crypto from 'crypto';
 import { config } from './config';
 import { executeQuery } from './db/connection';
+import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken'
 
 const app = express();
 const PORTBACK = config.port.portBackend;
@@ -16,6 +18,7 @@ const PORTFRONT = config.port.portFrontend;
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.json());
 
 
 // Serve login.html at / and /login.html
@@ -146,66 +149,9 @@ cron.schedule(config.cron.usageValidation, async () => {
 
 
 
-// app.get('', async (req: Request, res: Response) => {
-
-//   const {user_id, date} = req.query
-
-//   if (!user_id || !date) {
-//     const today = new Date().toLocaleDateString("en-CA")
-//     const result = await pool.query(
-//       "SELECT user_id FROM users ORDER BY user_id LIMIT 1"
-//     );
-//     const firstUserId = result.rows[0].user_id;
-
-//     // Redirect browser to the full querystring version
-//     return res.redirect(`/summary?user=${firstUserId}&date=${today}`);
-//   }
-
-//   const query = await pool.query(`
-//     SELECT user_id 
-//     FROM fitbit_users    
-//     ORDER BY user_id desc
-//     LIMIT 1
-//     `)
-
-
-//   res.json(query.rows)
-
-
-// });
-
-
-
-
-
-
-app.get("/api/users", async (req, res) => {
+app.get("/api/users", auth, async (req, res) => {
   const { date } = req.query;
   const user_summary = await executeQuery(
-    // `SELECT 
-    //   u.user_id,
-    //   c.date_queried,
-    //   r.daily_readiness,
-    //   s.efficiency,
-    //   s2.stressscore,
-    //   a.calories_out
-    // FROM fitbit_users u
-    // CROSS JOIN calendar c                      
-    // LEFT JOIN daily_readiness_view r
-    //   ON u.user_id = r.user_id 
-    //   AND c.date_queried = r.date_queried
-    // LEFT JOIN sleep_log s
-    //   ON u.user_id = s.user_id 
-    //   AND c.date_queried = s.date_queried
-    //   AND is_main_sleep = true
-    // LEFT JOIN stress_score s2
-    //   ON u.user_id = s2.user_id 
-    //   AND c.date_queried = s2.date_queried
-    // LEFT JOIN daily_activity_summary a
-    //   ON u.user_id = a.user_id 
-    //   AND c.date_queried = a.date_queried
-    // WHERE c.date_queried = $1
-    // ORDER BY u.user_id`
     
     `SELECT 
       u.user_id,
@@ -337,13 +283,6 @@ JOIN sleep_log l
  AND s.log_id  = l.log_id
 WHERE l.is_main_sleep = true
 ORDER BY s.start_time;
-
-
-
-
-
-
-
     `
     ,[id, date]
   )
@@ -355,7 +294,7 @@ ORDER BY s.start_time;
 
 
 
-app.get("/api/user", async (req, res) => {
+app.get("/api/user", auth, async (req, res) => {
   const { id, date } = req.query;
 
   if (id && date) {
@@ -380,7 +319,7 @@ app.get("/api/user", async (req, res) => {
 
 
 
-app.get("/api/aggregate", async (req, res) => {
+app.get("/api/aggregate", auth, async (req, res) => {
   const { id, date } = req.query;
 
   const result = {
@@ -491,6 +430,59 @@ async function getWornAgg() {
   return result.rows;
 }
 
+
+
+
+
+
+
+const SECRET = config.jwtSecret;
+
+
+
+// Login
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+  const result = await executeQuery(
+    "SELECT id, username, password_hash FROM auth.users WHERE username = $1",
+    [username]
+  );
+  const user = result.rows[0];
+  if (!user) return res.status(401).json({ error: "invalid credentials" });
+
+  const match = await bcrypt.compare(password, user.password_hash);
+  if (!match) return res.status(401).json({ error: "invalid credentials" });
+
+  const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: "30s" });
+  res.json({ token });
+});
+
+
+
+interface AuthRequest extends Request {
+  user?: { userId: number };
+}
+
+
+
+
+// Middleware
+function auth(req: AuthRequest, res: Response, next: NextFunction) {
+  const header = req.headers.authorization || "";
+  const token = header.replace("Bearer ", "");
+  try {
+    req.user = jwt.verify(token, SECRET) as { userId: number };
+    next();
+  } catch {
+    res.status(401).json({ error: "unauthorized" });
+  }
+}
+
+
+
+
+
+// "127.0.0.1",
 
 
 
