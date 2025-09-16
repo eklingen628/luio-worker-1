@@ -453,7 +453,7 @@ app.post("/api/login", async (req, res) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) return res.status(401).json({ error: "invalid credentials" });
 
-  const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: "30s" });
+  const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: "1h" });
   res.json({ token });
 });
 
@@ -478,6 +478,46 @@ function auth(req: AuthRequest, res: Response, next: NextFunction) {
   }
 }
 
+
+
+
+
+app.post("/api/changepw", auth, async (req: AuthRequest, res: Response) => {
+  const { oldpw, newpw1, newpw2 } = req.body;
+  const { userId } = req.user!
+
+  const result = await executeQuery(
+    "SELECT id, password_hash FROM auth.users WHERE id = $1",
+    [userId]
+  );
+  
+  const user = result.rows[0];
+  if (!user) return res.status(401).json({ error: "invalid credentials" });
+
+  
+
+  if (newpw1 !== newpw2 ) return res.status(400).json({ error: "new passwords do not match" });
+
+  const matcholdpw = await bcrypt.compare(oldpw, user.password_hash);
+  if (!matcholdpw ) return res.status(401).json({ error: "invalid credentials" });
+
+  const sameAsOld = await bcrypt.compare(newpw1, user.password_hash);
+  if (sameAsOld) return res.status(400).json({ error: "new password must be different" });
+
+
+  const newHash = await bcrypt.hash(newpw1, 10)
+
+  await executeQuery(
+    `UPDATE auth.users
+    SET password_hash = $1
+    WHERE id = $2 
+    `,
+    [newHash, userId]
+  );
+
+
+  res.status(201).send("Password changed successfully");
+});
 
 
 
