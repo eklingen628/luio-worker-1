@@ -134,15 +134,15 @@ cron.schedule(config.cron.import, async () => {
 
 
 
-cron.schedule(config.cron.usageValidation, async () => {
-  try {
-    await runComprehensiveUsageValidation();
-  } catch (err) {
-    console.error('Scheduled job error:', err);
-  }
-}, {
-  timezone: 'UTC'
-});
+// cron.schedule(config.cron.usageValidation, async () => {
+//   try {
+//     await runComprehensiveUsageValidation();
+//   } catch (err) {
+//     console.error('Scheduled job error:', err);
+//   }
+// }, {
+//   timezone: 'UTC'
+// });
 
 
 
@@ -518,6 +518,62 @@ app.post("/api/changepw", auth, async (req: AuthRequest, res: Response) => {
 
   res.status(201).send("Password changed successfully");
 });
+
+
+
+const BASE_DIR = path.resolve(config.dumpFileDIR); 
+
+
+app.get("/api/files", (req, res) => {
+  fs.readdir(BASE_DIR, { withFileTypes: true }, (err, entries) => {
+    if (err) {
+      console.error("Error reading directory:", err);
+      return res.status(500).send("Error reading files");
+    }
+
+    // Only return regular files, skip dirs & hidden files
+    const files = entries
+      .filter(e => e.isFile() && !e.name.startsWith("."))
+      .map(e => e.name);
+
+    res.json(files);
+  });
+});
+
+// Download file securely
+app.get("/api/files/:name", (req, res) => {
+  try {
+    const requested = req.params.name;
+
+    // Disallow path traversal characters outright
+    if (requested.includes("..") || requested.includes("/")) {
+      return res.status(400).send("Invalid file name");
+    }
+
+    // Build absolute path and enforce sandboxing
+    const filePath = path.resolve(BASE_DIR, requested);
+    if (!filePath.startsWith(BASE_DIR)) {
+      return res.status(403).send("Forbidden");
+    }
+
+    // Check if file exists before attempting download
+    fs.access(filePath, fs.constants.R_OK, err => {
+      if (err) {
+        return res.status(404).send("File not found or not readable");
+      }
+      res.download(filePath, requested, err2 => {
+        if (err2) {
+          console.error("Download error:", err2);
+          res.status(500).send("Error sending file");
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    res.status(500).send("Server error");
+  }
+});
+
 
 
 

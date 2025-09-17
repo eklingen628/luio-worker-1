@@ -10,7 +10,9 @@ const requiredEnvVars = [
   'CRON_USAGE_VAL',
   'DATABASE_URL',
   // 'LOG_DIR',
-  'JWT_SECRET'
+  'JWT_SECRET',
+  'DUMP_FILE_DIR'
+
 ];
 
 // Validate required environment variables
@@ -46,6 +48,7 @@ export const config = {
     portBackend: 3000,
     portFrontend: 4000,
   },
-  jwtSecret: process.env.JWT_SECRET!
+  jwtSecret: process.env.JWT_SECRET!,
+  dumpFileDIR: process.env.DUMP_FILE_DIR!
 };
  
