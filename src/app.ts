@@ -11,6 +11,7 @@ import { config } from './config';
 import { executeQuery } from './db/connection';
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken'
+import fs from "fs";
 
 const app = express();
 const PORTBACK = config.port.portBackend;
@@ -444,7 +445,7 @@ const SECRET = config.jwtSecret;
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
   const result = await executeQuery(
-    "SELECT id, username, password_hash FROM auth.users WHERE username = $1",
+    "SELECT id, username, password_hash, privileged FROM auth.users WHERE username = $1",
     [username]
   );
   const user = result.rows[0];
@@ -453,17 +454,24 @@ app.post("/api/login", async (req, res) => {
   const match = await bcrypt.compare(password, user.password_hash);
   if (!match) return res.status(401).json({ error: "invalid credentials" });
 
-  const token = jwt.sign({ userId: user.id }, SECRET, { expiresIn: "1h" });
+  const token = jwt.sign(
+    { userId: user.id, privileged: user.privileged }, 
+    SECRET, 
+    { expiresIn: "1h" });
+
   res.json({ token });
 });
 
 
 
 interface AuthRequest extends Request {
-  user?: { userId: number };
+  user?: AuthPayload;
 }
 
-
+interface AuthPayload {
+  userId: number;
+  privileged?: boolean;
+}
 
 
 // Middleware
@@ -471,13 +479,22 @@ function auth(req: AuthRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization || "";
   const token = header.replace("Bearer ", "");
   try {
-    req.user = jwt.verify(token, SECRET) as { userId: number };
+    req.user = jwt.verify(token, SECRET) as AuthPayload;
     next();
   } catch {
     res.status(401).json({ error: "unauthorized" });
   }
 }
 
+
+
+
+function requirePrivileged(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user?.privileged) {
+    return res.status(403).json({ error: "forbidden" }); // not privileged
+  }
+  next();
+}
 
 
 
@@ -524,7 +541,7 @@ app.post("/api/changepw", auth, async (req: AuthRequest, res: Response) => {
 const BASE_DIR = path.resolve(config.dumpFileDIR); 
 
 
-app.get("/api/files", (req, res) => {
+app.get("/api/files", auth, requirePrivileged, (req, res) => {
   fs.readdir(BASE_DIR, { withFileTypes: true }, (err, entries) => {
     if (err) {
       console.error("Error reading directory:", err);
@@ -541,7 +558,7 @@ app.get("/api/files", (req, res) => {
 });
 
 // Download file securely
-app.get("/api/files/:name", (req, res) => {
+app.get("/api/files/:name", auth, requirePrivileged, (req, res) => {
   try {
     const requested = req.params.name;
 
