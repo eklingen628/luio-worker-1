@@ -12,6 +12,7 @@ import { executeQuery } from './db/connection';
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken'
 import fs from "fs";
+import "./logger/loggerpatch"
 
 const app = express();
 const PORTBACK = config.port.portBackend;
