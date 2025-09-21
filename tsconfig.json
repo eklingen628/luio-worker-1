@@ -18,5 +18,5 @@
 		"noEmitOnError": false
 	},
 	"include": ["src/**/*"],
-	"exclude": ["deprecated/**/*", "ecosystem.config.js", ".test.app.ts"]
+	"exclude": ["deprecated/**/*", "ecosystem.config.js", ".test.app.ts", "createUser.ts"]
 }
