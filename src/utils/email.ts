@@ -80,7 +80,7 @@ export async function getFileDump() {
         const currentDir = path.join(parentDir,`dump_${dataDumpDate}.zip`);
         //check if the directory exists
         if (!fs.existsSync(currentDir)) {
-            console.log('No file dump found for directory: ', currentDir);
+            console.error('No file dump found for directory: ', currentDir);
             throw new Error('No file dump found for directory: ' + currentDir);
         }
         // const fullFilePaths = fs.readdirSync(currentDir).map(file => path.join(currentDir, file));

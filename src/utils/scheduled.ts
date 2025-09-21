@@ -41,7 +41,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
     const daysSinceAdded = genDates(false, first_added, getEndDateForUsageValidation())
     
     if (!daysSinceAdded) {
-      console.log("Error getting dates")
+      console.error("Error getting dates")
       return null;
     }
 
@@ -103,7 +103,7 @@ export async function getComprehensiveUsageObject(userData: FitBitUserIDData): P
 
 
   } catch (err) {
-    console.log({
+    console.error({
       source: 'getComprehensiveUsageObject',
       message: (err as Error).message,
       stack: (err as Error).stack,
@@ -159,7 +159,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
 
   try {
     if (!rows || rows.length === 0) {
-      console.log({
+      console.error({
         source: 'insertComprehensiveMissingData',
         message: 'No rows provided for insertion'
       });
@@ -178,7 +178,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
 
     
     if (rowsInserted.rowCount === 0) {
-      console.log({
+      console.error({
         source: 'insert-comprehensive-missing-data',
         message: "No missing data rows were inserted",
       });
@@ -188,7 +188,7 @@ export async function insertComprehensiveMissingData(rows: MissingDataRow[]): Pr
     return rowsInserted;
   
   } catch (err) {
-    console.log({
+    console.error({
       source: 'insertComprehensiveMissingData',
       message: (err as Error).message,
       stack: (err as Error).stack,
@@ -319,21 +319,15 @@ export function getDatesForScheduleImport() {
 		endDate.setTime(endDate.getTime() - oneDayMilliseconds * config.cron.importDaysPriorToToday)
 		let startDate = new Date(endDate.getTime() - (oneDayMilliseconds * (config.cron.importNumDaysToImport - 1)))
 
-    console.log(`Before conversion`)
-    console.log(`StartDate: ${startDate}`)
-    console.log(`EndDate: ${endDate}`)
-	
 		endDate = toCentral(endDate)
 		startDate = toCentral(startDate)
 	
-    console.log(`After conversion`)
-    console.log(`StartDate: ${startDate}`)
-    console.log(`EndDate: ${endDate}`)
+
     //Generate array of date strings
 		const dates = genDates(false, startDate, endDate);
 	
 		if (!dates) {
-			console.log(`Error in generating dates startdate: ${startDate.toString()} enddate: ${endDate.toString()}`);
+			console.error(`Error in generating dates startdate: ${startDate.toString()} enddate: ${endDate.toString()}`);
 			throw new Error("Dates are missing");
 		  }
     

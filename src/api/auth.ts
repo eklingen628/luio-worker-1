@@ -44,7 +44,7 @@ export async function getVerifierString(state: string): Promise<string | null> {
 			[state]
 		)
 		if (result.rowCount === 0) {
-			console.log({
+			console.error({
 				source: 'pool-delete-from-state',
 				message: "No state found or state expired",
 			});

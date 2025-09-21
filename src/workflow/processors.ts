@@ -62,12 +62,12 @@ export async function processUserDataForDateAndAction(
     const handler = DATA_HANDLERS[action];
 
     if (!handler) {
-      console.log(`Error getting handler for ${action}`)
+      console.error(`Error getting handler for ${action}`)
       return
     }
     
     if (!dateIsValid(userData.first_added, dateQueried)) {
-      console.log(`Error, the date queried ${dateQueried} is earlier than the date the user was first added ${userData.first_added}. Cancelling query.`)
+      console.error(`Error, for user ${userData.user_id}, the date queried ${dateQueried} is earlier than first added ${new Date(userData.first_added).toISOString()}. Cancelling query.`)
       return
     }
 

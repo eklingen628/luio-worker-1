@@ -45,7 +45,7 @@ export async function getAllUserData(): Promise<FitBitUserIDData[] | null> {
 	const result = await executeQuery<FitBitUserIDData>('SELECT * FROM fitbit_users', []);
 
 	if (result.rowCount === 0) {
-		console.log({
+		console.error({
 			source: 'pool-select',
 			message: "No users found",
 		});
@@ -67,7 +67,7 @@ export async function getOneUserData(userId: string, client?: PoolClient): Promi
 		}
 		
 		if (result.rowCount === 0) {
-			console.log({
+			console.error({
 				source: 'pool-select',
 				message: "No user found",
 			});

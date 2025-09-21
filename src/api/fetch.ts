@@ -43,7 +43,7 @@ Promise<{
 } | null> {
 
 	if (!dateQueried || !data?.user_id || !data?.access_token) {
-		console.log("Missing required fields: dateQueried, user_id, or access_token");
+		console.error("Missing required fields: dateQueried, user_id, or access_token");
 		return null;
 	}
 
@@ -64,7 +64,7 @@ Promise<{
 
 		// Handle other Fitbit API errors
 		if (err instanceof FitbitApiCallError) {
-			console.log(JSON.stringify({
+			console.error(JSON.stringify({
 				source: "getData: " + config,
 				statusCode: err.statusCode,
 				errorType: err.fitbitError.errors?.[0]?.errorType,
@@ -74,7 +74,7 @@ Promise<{
 		}
 
 		// Handle unexpected errors
-		console.log(JSON.stringify({
+		console.error(JSON.stringify({
 			source: "getData: " + config,
 			errorType: "unexpected_error",
 			message: (err as Error).message,

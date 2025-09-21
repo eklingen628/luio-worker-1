@@ -58,7 +58,7 @@ export async function insertHRTimeSeries(
 		return null;
 
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertHeartData',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -96,7 +96,7 @@ export async function insertHRVData(
 		return null;
 
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertHRVData',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -126,7 +126,7 @@ export async function insertHeartIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertHeartIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -159,7 +159,7 @@ export async function insertHRVIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertHRVIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,

@@ -131,7 +131,7 @@ export async function insertSleepData(
     return null;
 
   } catch (err) {
-    console.log({
+    console.error({
       source: 'insertSleepData',
       message: (err as Error).message,
       stack: (err as Error).stack,

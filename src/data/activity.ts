@@ -54,10 +54,10 @@ export async function insertActivityData(
 		]);
 
 		// Insert activities (schema unknown at this time)
-		if (Array.isArray(activities) && activities.length > 0) {
-			// TODO: Implement activities insertion when schema is known
-			console.log(`Found ${activities.length} activities for user ${user_id} on ${dateQueried}`);
-		}
+		// if (Array.isArray(activities) && activities.length > 0) {
+		// 	// TODO: Implement activities insertion when schema is known
+		// 	console.log(`Found ${activities.length} activities for user ${user_id} on ${dateQueried}`);
+		// }
 
 		// Insert distances
 		if (Array.isArray(distances) && distances.length > 0) {
@@ -141,7 +141,7 @@ export async function insertStepsIntraday(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertStepsIntraday',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
@@ -218,7 +218,7 @@ export async function insertActivityLogList(
 		}
 		return null;
 	} catch (err) {
-		console.log({
+		console.error({
 			source: 'insertActivityLogList',
 			message: (err as Error).message,
 			stack: (err as Error).stack,
